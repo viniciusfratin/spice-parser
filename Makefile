@@ -1,0 +1,22 @@
+CC = gcc
+
+SRC_DIR = src
+BIN_DIR = bin
+TMP_DIR = tmp
+
+FLEX_INPUT_FILES = $(SRC_DIR)/scanner.l
+FLEX_OUTPUT_FILES = $(TMP_DIR)/lex.yy.c
+
+BISON_INPUT_FILES = $(SRC_DIR)/parser.y
+BISON_OUTPUT_FILES = $(TMP_DIR)/y.tab.c $(TMP_DIR)/y.tab.h
+
+OUTPUT_FILE = $(BIN_DIR)/parser
+
+all:
+	flex $(FLEX_INPUT_FILES)
+	bison -dy $(BISON_INPUT_FILES)
+	mv *.c *.h $(TMP_DIR)
+	$(CC) $(FLEX_OUTPUT_FILES) $(BISON_OUTPUT_FILES) -o $(OUTPUT_FILE)$(OUTPUT_EXTENSION)
+	
+clean:
+	rm $(FLEX_OUTPUT_FILES) $(BISON_OUTPUT_FILES) $(OUTPUT_FILE)
