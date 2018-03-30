@@ -43,7 +43,7 @@ comment "*"
 					return TK_NEW_LINE;
 				}
 				
-{comment}		{printf("comment\n"); }
+{comment}		{ printf("comment\n"); }
 
 {value}			{
 					if(must_register())
