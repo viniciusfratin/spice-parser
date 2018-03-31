@@ -2,19 +2,12 @@
 
 #include "y.tab.h"
 
-#define BOOL char
-#define TRUE 1
-#define FALSE 0
-
-int yyparse();
-int yyerror(char *errormsg);
-BOOL must_register();
-
-int line_counter = 1;
-
 %}
 
+%option reentrant
+%option bison-bridge
 %option caseless
+
 
 whitespace [ \t]+
 new_line [\n]
@@ -71,32 +64,4 @@ R				{
 
 %%
 
-int main(void)
-{
-   yyparse();
-   return 0;
-}
 
-int yywrap(void)
-{
-   return 0;
-}
-
-int yyerror(char *errormsg)
-{
-    fprintf(stderr, "%s\n", errormsg);
-    exit(1);
-}
-
-BOOL must_register()
-{
-	if(line_counter == 1)
-	{
-		return FALSE;
-	}
-	
-	else
-	{
-		return TRUE;
-	}
-}
