@@ -1,26 +1,45 @@
-#include "y.tab.h"
+#include "main.h"
+#include "parser.h"
+#include "lexer.h"
 
 #define BOOL char
 #define TRUE 1
 #define FALSE 0
 
-BOOL must_register();
-
-int main()
+int main(int argc, char* argv[])
 {
-   yyparse();
-   return 0;
-}
-
-BOOL must_register()
-{
-	if(line_counter == 1)
+	if(argc != 2)
 	{
-		return FALSE;
+		fprintf(stderr, "Please inform the input file name.\n");
+		exit(1);
 	}
 	
-	else
+	FILE *input;
+	input = fopen(argv[1], "r");
+	if(input == NULL)
 	{
-		return TRUE;
+		fprintf(stderr, "Invalid file.\n");
+		exit(1);
 	}
+
+	int result;
+	yyscan_t scanner;
+
+	yylex_init(&scanner);
+
+	struct lexer_data* data;
+	yylex_init_extra(data, &scanner);   	
+	yyset_in(input, scanner);
+
+	data->line_number = 1;
+
+	result = yyparse(scanner);
+
+	yylex_destroy(scanner);
+
+	fclose(input);
+   	
+	return result;
 }
+
+

@@ -1,13 +1,22 @@
-%{
-
-#include "y.tab.h"
-
-%}
-
-%option reentrant
 %option bison-bridge
+%option bison-locations
+%option ecs
+%option nodefault
+%option noyywrap
+%option reentrant
+%option stack
+%option warn
+%option yylineno
 %option caseless
 
+%{
+
+#include "main.h"
+#include "parser.h"
+
+#define YY_EXTRA_TYPE struct lexer_data *
+
+%}
 
 whitespace [ \t]+
 new_line [\n]
@@ -23,7 +32,6 @@ comment "*"
 %%
 
 {whitespace}	{
-					if(must_register())
 					{
 						printf("whitespace\n");
 						return TK_WHITESPACE;
@@ -31,15 +39,14 @@ comment "*"
 				}
 
 {new_line}		{
-					line_counter++;
-					printf("new line\n");
+					yyextra->line_number++;
+					printf("new line %d\n", yyextra->line_number);
 					return TK_NEW_LINE;
 				}
 				
 {comment}		{ printf("comment\n"); }
 
 {value}			{
-					if(must_register())
 					{
 						printf("value\n");
 						return TK_VALUE;
@@ -47,7 +54,6 @@ comment "*"
 				}
 				
 R				{
-					if(must_register())
 					{
 						printf("resistor\n");
 						return TK_RESISTOR;
@@ -55,7 +61,6 @@ R				{
 				}
 				
 ..			{
-					if(must_register())
 					{
 						printf("label\n");
 						return TK_LABEL;

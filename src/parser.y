@@ -1,11 +1,26 @@
+%define parse.error verbose
+%define api.pure true
+%locations
+%token-table
+%glr-parser
+%lex-param {void *scanner}
+%parse-param {void *scanner}
+
 %{
 
 #include <stdio.h>
 #include <stdlib.h>
-int yylex(void);
-int yyerror(const char *s);
+
+#include "parser.h"
+#include "lexer.h"
+
+int yyerror(YYLTYPE *locp, yyscan_t scanner, const char *msg);
 
 %}
+
+%union {
+	int value;
+}
 
 %token TK_WHITESPACE
 %token TK_NEW_LINE
@@ -65,3 +80,22 @@ element_label:
 		;
 	
 %%
+
+int yyerror(YYLTYPE *locp, yyscan_t scanner, const char *msg) 
+{
+	if (locp) 
+	{
+   		fprintf(stderr, "parse error: %s (:%d.%d -> :%d.%d)\n",
+                    msg,
+                    locp->first_line, locp->first_column,
+                    locp->last_line,  locp->last_column
+    		);
+  	} 
+	
+	else 
+	{
+    		fprintf(stderr, "parse error: %s\n", msg);
+  	}
+  	
+	return 0;
+}
