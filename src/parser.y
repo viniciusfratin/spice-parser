@@ -41,6 +41,7 @@ int yyerror(YYLTYPE *locp, yyscan_t scanner, const char *msg);
 %token TK_DIODE
 %token TK_TJB
 %token TK_MOSFET
+%token TK_ELEMENT
 
 %%
 
@@ -53,32 +54,54 @@ first_line:
 		;
 		
 body:
-		command
-		| element {printf("blergh");}
+		%empty
+		| TK_NEW_LINE body
+		| command body
+		| element body
 		;
 
 command:
-		TK_COMMAND
+		command_identifier command_parameters
 		;
+
+command_identifier:
+		TK_COMMAND
+			{
+				printf("command\n");
+			}
+		;
+
+command_parameters:
+		%empty
+		| TK_LABEL command_parameters
+		| TK_VALUE command_parameters
 		
 element:
-		element_identifier element_label
+		element_identifier element_label element_value
 		;
 		
 element_identifier:
-		TK_RESISTOR
+		TK_ELEMENT
 			{
-				printf("resistor\n");
+				printf("element\n");
 			}
 		;
 		
 element_label:
-		TK_LABEL
+		%empty
+		| TK_LABEL element_label
 			{
 				printf("label\n");
 			}
 		;
-	
+
+element_value:
+		TK_VALUE
+			{
+				printf("value\n");
+			}
+		;
+		
 %%
 
 int yyerror(YYLTYPE *locp, yyscan_t scanner, const char *msg) 
