@@ -13,9 +13,12 @@
 
 #include "main.h"
 #include "parser.h"
+#include "label_list.h"
 
 #define YY_EXTRA_TYPE struct lexer_data *
 
+int reset_label_list(label_list** label_list_ptr);
+char* remove_spaces(char* source);
 %}
 
 common_text [a-zA-Z0-9_]+
@@ -56,6 +59,7 @@ value {number}|{common_text}$
 {command_identifier}	{
 				if(yylineno > 1)
 				{
+					reset_label_list(&yyextra->current_label_list);
 					printf("command: %s\n", yytext);
 					return TK_COMMAND;
 				}	
@@ -64,7 +68,11 @@ value {number}|{common_text}$
 {element_identifier}	{
 			if(yylineno > 1)
 			{
+				reset_label_list(&yyextra->current_label_list);
 				printf("element: %s\n", yytext);
+	
+				char* element_name = strdup(yytext);
+				yylval->string = remove_spaces(element_name);	
 				return TK_ELEMENT;
 			}
 		}
@@ -72,7 +80,19 @@ value {number}|{common_text}$
 {label} 	{	
 			if(yylineno > 1)
 			{
-				printf("label: %s\n", yytext);
+				label_list_insert(&yyextra->global_label_list, remove_spaces(yytext));
+				label_list_insert(&yyextra->current_label_list, remove_spaces(yytext));
+			
+				/*label_list* current_element = yyextra->global_label_list;
+				while(current_element != NULL)
+				{
+					label* l = (label*)(current_element->value);
+					printf("global list elem: %d %s\n", l->id, l->name);
+					current_element = current_element->next;
+				}*/
+
+				printf("label: %s\n", remove_spaces(yytext));
+				yylval->l_list = yyextra->current_label_list;
 				return TK_LABEL;
 			}	
 		}			
@@ -94,4 +114,26 @@ value {number}|{common_text}$
 	}
 %%
 
+int reset_label_list(label_list** label_list_ptr)
+{
+	label_list_clear(label_list_ptr);
+}
 
+// From StackOverflow user Aaron.
+char* remove_spaces(char* source)
+{
+	char* i = source;
+  	char* j = source;
+  	while(*j != 0)
+  	{
+    		*i = *j++;
+    		if(*i != ' ')
+		{
+      			i++;
+		}
+  	}
+  		
+	*i = 0;
+	
+	return source;
+}	

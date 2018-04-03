@@ -1,6 +1,7 @@
 #include "main.h"
 #include "parser.h"
 #include "lexer.h"
+#include "label_list.h"
 
 #define BOOL char
 #define TRUE 1
@@ -31,7 +32,9 @@ int main(int argc, char* argv[])
 	yylex_init_extra(data, &scanner);   	
 	yyset_in(input, scanner);
 
-	data->line_number = 1;
+	label_list_initialize(&data->global_label_list);
+	label_list_insert(&data->global_label_list, "0");
+	label_list_initialize(&data->current_label_list);
 
 	result = yyparse(scanner);
 
