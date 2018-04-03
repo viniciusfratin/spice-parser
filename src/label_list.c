@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "label_list.h"
+#include "string_operations.h"
 
 int label_list_initialize(label_list** list_ptr)
 {
@@ -31,7 +32,7 @@ int label_list_insert(label_list** list_ptr, const char* label_name)
 		return 1;
 	}
 	
-	alloc_value->name = strdup(label_name);
+	strcpy(alloc_value->name, label_name);
 	// Alloc error.
 	if(alloc_value->name == NULL)
 	{
@@ -45,7 +46,6 @@ int label_list_insert(label_list** list_ptr, const char* label_name)
 	// Insert error.
 	if(result != 0)
 	{
-		free(alloc_value->name);
 		free(alloc_value);
 		return 1;
 	}
@@ -57,12 +57,19 @@ int label_list_contains_name(label_list* list, const char* label_name)
 {
 	int found_index = -1;
 
+	char lowercase_name[512];
+	strcpy(lowercase_name, label_name);
+	convert_to_lowercase(lowercase_name);
+
 	int current_index;
 	label_list* current_element = list;
 	for(current_index = 0; current_element != NULL; current_index++, current_element = current_element->next)
-	{
+	{		
 		label* l = (label*) current_element->value;
-		if(strcmp(l->name, label_name) == 0)
+		char lowercase_current_name[512];
+		strcpy(lowercase_current_name, l->name);
+		convert_to_lowercase(lowercase_current_name);
+		if(strcmp(lowercase_current_name, lowercase_name) == 0)
 		{
 			found_index = current_index;
 			break;
@@ -85,7 +92,6 @@ int label_list_clear(label_list** list_ptr)
 	while(current_element != NULL)
 	{
 		label* l = (label*) current_element->value;
-		free(l->name);
 		free(l);
 
 		current_element = current_element->next;

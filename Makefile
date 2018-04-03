@@ -16,7 +16,7 @@ BISON_INPUT_FILE = $(SRC_DIR)/parser.y
 BISON_OUTPUT_SOURCE_FILE = $(TMP_DIR)/parser.c
 BISON_OUTPUT_HEADER_FILE = $(TMP_DIR)/parser.h
 
-SRC_INPUT_FILES = $(SRC_DIR)/generic_list.c $(SRC_DIR)/label_list.c $(SRC_DIR)/main.c
+SRC_INPUT_FILES = $(SRC_DIR)/generic_list.c $(SRC_DIR)/label_list.c $(SRC_DIR)/string_operations.c $(SRC_DIR)/main.c
 
 OUTPUT_FILE = $(BIN_DIR)/parser
 

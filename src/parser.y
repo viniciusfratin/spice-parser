@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "main.h"
 #include "label_list.h"
 #include "parser.h"
 #include "lexer.h"
@@ -20,9 +21,9 @@ int yyerror(YYLTYPE *locp, yyscan_t scanner, const char *msg);
 %}
 
 %union {
-	int value;
-	char* string;
+	char string[512];
 	label_list* l_list;
+	element_value value;
 }
 
 %token TK_WHITESPACE
@@ -31,7 +32,7 @@ int yyerror(YYLTYPE *locp, yyscan_t scanner, const char *msg);
 %token TK_COMMAND
 %token <l_list> TK_LABEL
 %token TK_PARAMETERS
-%token TK_VALUE
+%token <value> TK_VALUE
 %token TK_RESISTOR
 %token TK_CAPACITOR
 %token TK_INDUCTOR
@@ -48,6 +49,7 @@ int yyerror(YYLTYPE *locp, yyscan_t scanner, const char *msg);
 
 %type <string> element_identifier
 %type <l_list> element_nodes
+%type <value> element_value
 
 %%
 
@@ -99,7 +101,7 @@ element:
 element_identifier:
 		TK_ELEMENT
 			{
-				$$ = $1;
+				strcpy($$, $1);
 				printf("element\n");
 			}
 		;
@@ -119,7 +121,16 @@ element_nodes:
 element_value:
 		TK_VALUE
 			{
-				printf("value\n");
+				element_value elem_val = $1;
+				if(elem_val.is_numeric)
+				{
+					printf("numeric value: %lf\n", elem_val.value.numeric_value);
+				}
+
+				else
+				{
+					printf("text value: %s\n", elem_val.value.string_value);
+				}
 			}
 		;
 		

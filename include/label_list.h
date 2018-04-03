@@ -8,7 +8,7 @@ typedef generic_list label_list;
 struct label_struct
 {
 	int id;
-	char* name;
+	char name[256];
 };
 
 typedef struct label_struct label;
