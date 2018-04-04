@@ -11,15 +11,14 @@
 
 %{
 
+#include <ctype.h>
 #include "main.h"
 #include "parser.h"
 #include "label_list.h"
 #include "string_operations.h"
 
-#define YY_EXTRA_TYPE struct lexer_data *
-
+int get_element_type(const char* element_name);
 double get_multiplier_value(const char* multiplier_str);
-int reset_label_list(label_list** label_list_ptr);
 %}
 
 common_text [a-zA-Z0-9_]+
@@ -62,7 +61,6 @@ text_value {common_text}$
 {command_identifier}	{
 				if(yylineno > 1)
 				{
-					reset_label_list(&yyextra->current_label_list);
 					printf("command: %s\n", yytext);
 					return TK_COMMAND;
 				}	
@@ -71,30 +69,19 @@ text_value {common_text}$
 {element_identifier}	{
 			if(yylineno > 1)
 			{
-				reset_label_list(&yyextra->current_label_list);
 				printf("element: %s\n", yytext);
 
 				strcpy(yylval->string, remove_spaces(yytext));	
-				return TK_ELEMENT;
+				return get_element_type(yylval->string);
 			}
 		}
 	
 {label} 	{	
 			if(yylineno > 1)
 			{
-				label_list_insert(&yyextra->global_label_list, remove_spaces(yytext));
-				label_list_insert(&yyextra->current_label_list, remove_spaces(yytext));
-			
-				/*label_list* current_element = yyextra->global_label_list;
-				while(current_element != NULL)
-				{
-					label* l = (label*)(current_element->value);
-					printf("global list elem: %d %s\n", l->id, l->name);
-					current_element = current_element->next;
-				}*/
-
-				printf("label: %s\n", remove_spaces(yytext));
-				yylval->l_list = yyextra->current_label_list;
+				char* label_name = remove_spaces(yytext);
+				printf("label: %s\n", label_name);
+				strcpy(yylval->string, label_name);
 				return TK_LABEL;
 			}	
 		}			
@@ -134,10 +121,27 @@ text_value {common_text}$
 {mult_number_value} {
 			if(yylineno > 1)
 			{
-				char multiplier[5];
-				sscanf(yytext, "%*f%s", multiplier);
-				convert_to_lowercase(multiplier);
-				printf("mult numeric value: %s; multipler: %s\n", yytext, multiplier);
+				double value;
+				char multiplier_str[16];
+				sscanf(yytext, "%lf%s", &value, multiplier_str);
+
+				double multiplier_value = get_multiplier_value(multiplier_str);
+				// Invalid multiplier.
+				if(multiplier_value == -1)
+				{
+					printf("bad multiplier '%s' at line %d\n", multiplier_str, yylineno);
+					exit(1);
+				}
+
+				value = value * multiplier_value;
+				printf("mult numeric value: %le\n", value);
+
+				element_value elem_val;
+				elem_val.value.numeric_value = value;
+				elem_val.is_numeric = 1;
+
+				yylval->value = elem_val;
+
 				return TK_VALUE;
 			}
 		}
@@ -148,6 +152,12 @@ text_value {common_text}$
 {text_value}	{
 			if(yylineno > 1)
 			{
+				element_value elem_val;
+				strcpy(elem_val.value.string_value, yytext);
+				elem_val.is_numeric = 0;
+
+				yylval->value = elem_val;
+				
 				printf("text value: %s\n", yytext);
 				return TK_VALUE;
 			}
@@ -162,58 +172,116 @@ text_value {common_text}$
 	}
 %%
 
+int get_element_type(const char* element_name)
+{
+	char element_identifier = tolower(element_name[0]);
+	switch(element_identifier)
+	{
+		case 'r':
+			return TK_RESISTOR;
+			break;
+
+		case 'c':
+			return TK_CAPACITOR;
+			break;
+
+		case 'l':
+			return TK_INDUCTOR;
+			break;
+	
+		case 'v':
+			return TK_V_SOURCE;
+			break;
+
+		case 'i':
+			return TK_C_SOURCE;
+			break;
+
+		case 'e':
+			return TK_VCV_SOURCE;
+			break;
+
+		case 'f':
+			return TK_CCC_SOURCE;
+			break;
+
+		case 'g':
+			return TK_VCC_SOURCE;
+			break;
+
+		case 'h':
+			return TK_CCV_SOURCE;
+			break;
+
+		case 'd':
+			return TK_DIODE;
+			break;
+
+		case 'q':
+			return TK_TJB;
+			break;
+
+		case 'm':
+			return TK_MOSFET;
+			break;
+
+		default:
+			return TK_INVALID_ELEMENT;
+			break;
+	}
+}
 
 double get_multiplier_value(const char* multiplier_str)
 {
-	if(strcmp(multiplier_str, "f") == 0)
+	char lowercase_multiplier[16];
+	strcpy(lowercase_multiplier, multiplier_str);
+	convert_to_lowercase(lowercase_multiplier);
+	
+	if(strcmp(lowercase_multiplier, "f") == 0)
 	{
 		return 1e-15;
 	}
 
-	else if(strcmp(multiplier_str, "p") == 0)
+	else if(strcmp(lowercase_multiplier, "p") == 0)
 	{
 		return 1e-12;
 	}
 
-	else if(strcmp(multiplier_str, "n") == 0)
+	else if(strcmp(lowercase_multiplier, "n") == 0)
 	{
 		return 1e-9;
 	}
 
-	else if(strcmp(multiplier_str, "u") == 0)
+	else if(strcmp(lowercase_multiplier, "u") == 0)
 	{
 		return 1e-6;
 	}
 
-	else if(strcmp(multiplier_str, "m") == 0)
+	else if(strcmp(lowercase_multiplier, "m") == 0)
 	{
 		return 1e-3;
 	}
 
-	else if(strcmp(multiplier_str, "k") == 0)
+	else if(strcmp(lowercase_multiplier, "k") == 0)
 	{
 		return 1e3;
 	}
 	
-	else if(strcmp(multiplier_str, "meg") == 0)
+	else if(strcmp(lowercase_multiplier, "meg") == 0)
 	{
 		return 1e6;
 	}
 
-	else if(strcmp(multiplier_str, "g") == 0)
+	else if(strcmp(lowercase_multiplier, "g") == 0)
 	{
 		return 1e9;
 	}
 
-	else if(strcmp(multiplier_str, "t") == 0)
+	else if(strcmp(lowercase_multiplier, "t") == 0)
 	{
 		return 1e12;
 	}
 
-	return 0;
+	return -1;
 }
 
-int reset_label_list(label_list** label_list_ptr)
-{
-	label_list_clear(label_list_ptr);
-}	

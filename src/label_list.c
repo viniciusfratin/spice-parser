@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "label_list.h"
@@ -99,4 +100,15 @@ int label_list_clear(label_list** list_ptr)
 
 	int clear_result = generic_list_clear(list_ptr);
 	return clear_result;
+}
+
+void label_list_print(label_list* list)
+{
+	int i;
+	label_list* current_element = list;
+	for(i = 0; current_element != NULL; current_element = current_element->next, i++)
+	{
+		label* l = (label*) current_element->value;
+		printf("element at position %d: %s\n", l->id, l->name);
+	}
 }

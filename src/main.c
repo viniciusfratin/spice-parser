@@ -24,23 +24,24 @@ int main(int argc, char* argv[])
 	}
 
 	int result;
-	yyscan_t scanner;
 
+	yyscan_t scanner;
+	struct parser_data p_data;
+	
 	yylex_init(&scanner);
 
-	struct lexer_data* data;
-	yylex_init_extra(data, &scanner);   	
 	yyset_in(input, scanner);
 
-	label_list_initialize(&data->global_label_list);
-	label_list_insert(&data->global_label_list, "0");
-	label_list_initialize(&data->current_label_list);
+	label_list_initialize(&p_data.label_list);
+	label_list_insert(&p_data.label_list, "0");
 
-	result = yyparse(scanner);
+	result = yyparse(scanner, &p_data);
 
 	yylex_destroy(scanner);
 
 	fclose(input);
-   	
+
+	printf("\nnodes:\n");
+	label_list_print(p_data.label_list);   	
 	return result;
 }

@@ -1,5 +1,5 @@
 CC = gcc
-CC_OPTIONS = 
+CC_OPTIONS = -g
 
 SRC_DIR = src
 BIN_DIR = bin

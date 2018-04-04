@@ -4,7 +4,7 @@
 %token-table
 %glr-parser
 %lex-param {void *scanner}
-%parse-param {void *scanner}
+%parse-param {void *scanner} {struct parser_data *p_data}
 
 %{
 
@@ -16,13 +16,12 @@
 #include "parser.h"
 #include "lexer.h"
 
-int yyerror(YYLTYPE *locp, yyscan_t scanner, const char *msg);
+int yyerror(YYLTYPE *locp, yyscan_t scanner, struct parser_data *p_data, const char *msg);
 
 %}
 
 %union {
 	char string[512];
-	label_list* l_list;
 	element_value value;
 }
 
@@ -30,26 +29,25 @@ int yyerror(YYLTYPE *locp, yyscan_t scanner, const char *msg);
 %token TK_NEW_LINE
 %token TK_TEXT
 %token TK_COMMAND
-%token <l_list> TK_LABEL
-%token TK_PARAMETERS
+%token <string> TK_LABEL
 %token <value> TK_VALUE
-%token TK_RESISTOR
-%token TK_CAPACITOR
-%token TK_INDUCTOR
-%token TK_V_SOURCE
-%token TK_C_SOURCE
-%token TK_VCV_SOURCE
-%token TK_CCC_SOURCE
-%token TK_VCC_SOURCE
-%token TK_CCV_SOURCE
-%token TK_DIODE
-%token TK_TJB
-%token TK_MOSFET
-%token <string> TK_ELEMENT
+%token <string> TK_RESISTOR
+%token <string> TK_CAPACITOR
+%token <string> TK_INDUCTOR
+%token <string> TK_V_SOURCE
+%token <string> TK_C_SOURCE
+%token <string> TK_VCV_SOURCE
+%token <string> TK_CCC_SOURCE
+%token <string> TK_VCC_SOURCE
+%token <string> TK_CCV_SOURCE
+%token <string> TK_DIODE
+%token <string> TK_TJB
+%token <string> TK_MOSFET
+%token <string> TK_INVALID_ELEMENT
 
-%type <string> element_identifier
-%type <l_list> element_nodes
-%type <value> element_value
+%type <string> two_node_element
+%type <string> three_node_element
+%type <string> four_node_element
 
 %%
 
@@ -84,59 +82,50 @@ command_parameters:
 		| TK_LABEL command_parameters
 		| TK_VALUE command_parameters
 		
-element:
-		element_identifier element_nodes element_value
+element: 
+		two_node_element TK_LABEL TK_LABEL TK_VALUE
 			{
-				label_list* current_element = $2;
-				while(current_element != NULL)
-				{
-					label* l = (label*)(current_element->value);
-					printf("(%s) labels: %d %s\n", $1, l->id, l->name);
-					current_element = current_element->next;
-				}
-
+				label_list_insert(&p_data->label_list, $2);
+				label_list_insert(&p_data->label_list, $3);
 			}
-		;
-		
-element_identifier:
-		TK_ELEMENT
+		| three_node_element TK_LABEL TK_LABEL TK_LABEL TK_VALUE
 			{
-				strcpy($$, $1);
-				printf("element\n");
+				label_list_insert(&p_data->label_list, $2);
+				label_list_insert(&p_data->label_list, $3);
+				label_list_insert(&p_data->label_list, $4);
 			}
-		;
-		
-element_nodes:
-		%empty
+		| four_node_element TK_LABEL TK_LABEL TK_LABEL TK_LABEL TK_VALUE
 			{
-				$$ = NULL;
-			}
-		| TK_LABEL element_nodes
-			{
-				$$ = $1;
-				printf("label\n");
+				label_list_insert(&p_data->label_list, $2);
+				label_list_insert(&p_data->label_list, $3);
+				label_list_insert(&p_data->label_list, $4);
+				label_list_insert(&p_data->label_list, $5);
 			}
 		;
 
-element_value:
-		TK_VALUE
-			{
-				element_value elem_val = $1;
-				if(elem_val.is_numeric)
-				{
-					printf("numeric value: %lf\n", elem_val.value.numeric_value);
-				}
+two_node_element:
+		TK_RESISTOR 	{ strcpy($$, $1); }
+		| TK_CAPACITOR 	{ strcpy($$, $1); }
+		| TK_INDUCTOR 	{ strcpy($$, $1); }
+		| TK_V_SOURCE 	{ strcpy($$, $1); }
+		| TK_C_SOURCE 	{ strcpy($$, $1); }
+		| TK_DIODE 	{ strcpy($$, $1); }
+	;
 
-				else
-				{
-					printf("text value: %s\n", elem_val.value.string_value);
-				}
-			}
-		;
+three_node_element:
+		TK_TJB 		{ strcpy($$, $1); }
+		| TK_MOSFET 	{ strcpy($$, $1); }
+	;
+
+four_node_element:
+		TK_VCV_SOURCE	{ strcpy($$, $1); }
+		| TK_CCC_SOURCE { strcpy($$, $1); }
+		| TK_VCC_SOURCE { strcpy($$, $1); }
+		| TK_CCV_SOURCE { strcpy($$, $1); }
 		
 %%
 
-int yyerror(YYLTYPE *locp, yyscan_t scanner, const char *msg) 
+int yyerror(YYLTYPE *locp, yyscan_t scanner, struct parser_data *p_data, const char *msg) 
 {
 	if (locp) 
 	{

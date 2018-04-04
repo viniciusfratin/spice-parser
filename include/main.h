@@ -3,10 +3,9 @@
 
 #include "label_list.h"
 
-struct lexer_data
+struct parser_data
 {
-	label_list* global_label_list;
-	label_list* current_label_list;
+	label_list* label_list;
 };
 
 union element_value_type_union
@@ -24,5 +23,15 @@ struct element_value_struct
 };
 
 typedef struct element_value_struct element_value;
+
+struct element_struct
+{
+	int type;
+	char name[512];
+	label_list* nodes;
+	element_value value;
+};
+
+typedef struct element_struct element;
 
 #endif
