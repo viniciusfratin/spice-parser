@@ -13,6 +13,7 @@
 
 #include "main.h"
 #include "label_list.h"
+#include "spice_format.h"
 #include "parser.h"
 #include "lexer.h"
 
@@ -25,9 +26,7 @@ int yyerror(YYLTYPE *locp, yyscan_t scanner, struct parser_data *p_data, const c
 	element_value value;
 }
 
-%token TK_WHITESPACE
 %token TK_NEW_LINE
-%token TK_TEXT
 %token TK_COMMAND
 %token <string> TK_LABEL
 %token <value> TK_VALUE
@@ -72,9 +71,6 @@ command:
 
 command_identifier:
 		TK_COMMAND
-			{
-				printf("command\n");
-			}
 		;
 
 command_parameters:
@@ -85,21 +81,113 @@ command_parameters:
 element: 
 		two_node_element TK_LABEL TK_LABEL TK_VALUE
 			{
+				element elem;
+					
+				elem.type = get_element_type($1);
+				strcpy(elem.name, $1);
+				label_list_initialize(&elem.nodes);
+				label_list_insert(&elem.nodes, $2);
+				label_list_insert(&elem.nodes, $3);
+				elem.value = $4;
+
+				element_list_insert(&p_data->element_list, elem);
+
 				label_list_insert(&p_data->label_list, $2);
 				label_list_insert(&p_data->label_list, $3);
+
+
+				label *l1, *l2;
+				label_list_contains_name(elem.nodes, $2, &l1);
+				label_list_contains_name(elem.nodes, $3, &l2);
+
+				label *global_l1, *global_l2;
+				label_list_contains_name(p_data->label_list, $2, &global_l1);
+				label_list_contains_name(p_data->label_list, $3, &global_l2);
+
+				l1->global_id = global_l1->id;
+				l2->global_id = global_l2->id;
+				global_l1->global_id = global_l1->id;
+				global_l2->global_id = global_l2->id;
+
 			}
 		| three_node_element TK_LABEL TK_LABEL TK_LABEL TK_VALUE
 			{
+				element elem;
+					
+				elem.type = get_element_type($1);
+				strcpy(elem.name, $1);
+				label_list_initialize(&elem.nodes);
+				label_list_insert(&elem.nodes, $2);
+				label_list_insert(&elem.nodes, $3);
+				label_list_insert(&elem.nodes, $4);
+				elem.value = $5;
+
+				element_list_insert(&p_data->element_list, elem);
+
 				label_list_insert(&p_data->label_list, $2);
 				label_list_insert(&p_data->label_list, $3);
 				label_list_insert(&p_data->label_list, $4);
+
+
+				label *l1, *l2, *l3;
+				label_list_contains_name(elem.nodes, $2, &l1);
+				label_list_contains_name(elem.nodes, $3, &l2);
+				label_list_contains_name(elem.nodes, $4, &l3);
+
+				label *global_l1, *global_l2, *global_l3;
+				label_list_contains_name(p_data->label_list, $2, &global_l1);
+				label_list_contains_name(p_data->label_list, $3, &global_l2);
+				label_list_contains_name(p_data->label_list, $4, &global_l3);
+
+				l1->global_id = global_l1->id;
+				l2->global_id = global_l2->id;
+				l3->global_id = global_l3->id;
+				global_l1->global_id = global_l1->id;
+				global_l2->global_id = global_l2->id;
+				global_l3->global_id = global_l3->id;
+
 			}
 		| four_node_element TK_LABEL TK_LABEL TK_LABEL TK_LABEL TK_VALUE
 			{
+				element elem;
+					
+				elem.type = get_element_type($1);
+				strcpy(elem.name, $1);
+				label_list_initialize(&elem.nodes);
+				label_list_insert(&elem.nodes, $2);
+				label_list_insert(&elem.nodes, $3);
+				label_list_insert(&elem.nodes, $4);
+				label_list_insert(&elem.nodes, $5);
+				elem.value = $6;
+
+				element_list_insert(&p_data->element_list, elem);
+
 				label_list_insert(&p_data->label_list, $2);
 				label_list_insert(&p_data->label_list, $3);
 				label_list_insert(&p_data->label_list, $4);
 				label_list_insert(&p_data->label_list, $5);
+
+
+				label *l1, *l2, *l3, *l4;
+				label_list_contains_name(elem.nodes, $2, &l1);
+				label_list_contains_name(elem.nodes, $3, &l2);
+				label_list_contains_name(elem.nodes, $4, &l3);
+				label_list_contains_name(elem.nodes, $5, &l4);
+
+				label *global_l1, *global_l2, *global_l3, *global_l4;
+				label_list_contains_name(p_data->label_list, $2, &global_l1);
+				label_list_contains_name(p_data->label_list, $3, &global_l2);
+				label_list_contains_name(p_data->label_list, $4, &global_l3);
+				label_list_contains_name(p_data->label_list, $5, &global_l4);
+
+				l1->global_id = global_l1->id;
+				l2->global_id = global_l2->id;
+				l3->global_id = global_l3->id;
+				l4->global_id = global_l4->id;
+				global_l1->global_id = global_l1->id;
+				global_l2->global_id = global_l2->id;
+				global_l3->global_id = global_l3->id;
+				global_l4->global_id = global_l4->id;
 			}
 		;
 
@@ -129,7 +217,7 @@ int yyerror(YYLTYPE *locp, yyscan_t scanner, struct parser_data *p_data, const c
 {
 	if (locp) 
 	{
-   		fprintf(stderr, "parse error: %s (:%d.%d -> :%d.%d)\n",
+   		fprintf(stderr, "Parse error: %s (:%d.%d -> :%d.%d)\n",
                     msg,
                     locp->first_line, locp->first_column,
                     locp->last_line,  locp->last_column
@@ -138,7 +226,7 @@ int yyerror(YYLTYPE *locp, yyscan_t scanner, struct parser_data *p_data, const c
 	
 	else 
 	{
-    		fprintf(stderr, "parse error: %s\n", msg);
+    		fprintf(stderr, "Parse error: %s\n", msg);
   	}
   	
 	return 0;

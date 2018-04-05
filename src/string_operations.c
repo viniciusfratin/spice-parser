@@ -20,7 +20,7 @@ char* remove_spaces(char* source)
   	while(*j != 0)
   	{
     		*i = *j++;
-    		if(*i != ' ')
+    		if(*i != ' ' && *i != '\t')
 		{
       			i++;
 		}

@@ -13,12 +13,14 @@
 
 #include <ctype.h>
 #include "main.h"
+#include "spice_format.h"
 #include "parser.h"
 #include "label_list.h"
 #include "string_operations.h"
 
-int get_element_type(const char* element_name);
+int get_element_token_type(const char* element_name);
 double get_multiplier_value(const char* multiplier_str);
+
 %}
 
 common_text [a-zA-Z0-9_]+
@@ -40,28 +42,13 @@ text_value {common_text}$
 
 %%
 
-{whitespace} 	{
-			if(yylineno > 1)
-			{
-				//printf("whitespace\n");
-				return TK_WHITESPACE;
-			}
-		}
-
 {new_line}	{
-			//printf("new line %d\n", yylineno);
 			return TK_NEW_LINE;
 		}
 
-
-{comment}	{
-			printf("comment: %s\n", yytext);
-		}
-						
 {command_identifier}	{
 				if(yylineno > 1)
 				{
-					printf("command: %s\n", yytext);
 					return TK_COMMAND;
 				}	
 			}
@@ -69,10 +56,8 @@ text_value {common_text}$
 {element_identifier}	{
 			if(yylineno > 1)
 			{
-				printf("element: %s\n", yytext);
-
 				strcpy(yylval->string, remove_spaces(yytext));	
-				return get_element_type(yylval->string);
+				return get_element_token_type(yylval->string);
 			}
 		}
 	
@@ -80,7 +65,6 @@ text_value {common_text}$
 			if(yylineno > 1)
 			{
 				char* label_name = remove_spaces(yytext);
-				printf("label: %s\n", label_name);
 				strcpy(yylval->string, label_name);
 				return TK_LABEL;
 			}	
@@ -96,7 +80,6 @@ text_value {common_text}$
 				elem_val.value.numeric_value = value;
 				elem_val.is_numeric = 1;
 
-				printf("simple numeric value: %lf\n", value);
 				yylval->value = elem_val;
 				return TK_VALUE;
 			}
@@ -112,7 +95,6 @@ text_value {common_text}$
 				elem_val.value.numeric_value = value;
 				elem_val.is_numeric = 1;
 
-				printf("sci numeric value: %s\n", yytext);
 				yylval->value = elem_val;
 				return TK_VALUE;
 			}
@@ -126,15 +108,8 @@ text_value {common_text}$
 				sscanf(yytext, "%lf%s", &value, multiplier_str);
 
 				double multiplier_value = get_multiplier_value(multiplier_str);
-				// Invalid multiplier.
-				if(multiplier_value == -1)
-				{
-					printf("bad multiplier '%s' at line %d\n", multiplier_str, yylineno);
-					exit(1);
-				}
-
+				
 				value = value * multiplier_value;
-				printf("mult numeric value: %le\n", value);
 
 				element_value elem_val;
 				elem_val.value.numeric_value = value;
@@ -158,7 +133,6 @@ text_value {common_text}$
 
 				yylval->value = elem_val;
 				
-				printf("text value: %s\n", yytext);
 				return TK_VALUE;
 			}
 		}
@@ -166,13 +140,13 @@ text_value {common_text}$
 .	{
 		if(yylineno > 1)
 		{
-			printf("bad input character '%s' at line %d\n", yytext, yylineno);
+			fprintf(stderr, "Bad input '%s' at line %d\n", yytext, yylineno);
 			exit(1);
 		}
 	}
 %%
 
-int get_element_type(const char* element_name)
+int get_element_token_type(const char* element_name)
 {
 	char element_identifier = tolower(element_name[0]);
 	switch(element_identifier)
@@ -230,58 +204,3 @@ int get_element_type(const char* element_name)
 			break;
 	}
 }
-
-double get_multiplier_value(const char* multiplier_str)
-{
-	char lowercase_multiplier[16];
-	strcpy(lowercase_multiplier, multiplier_str);
-	convert_to_lowercase(lowercase_multiplier);
-	
-	if(strcmp(lowercase_multiplier, "f") == 0)
-	{
-		return 1e-15;
-	}
-
-	else if(strcmp(lowercase_multiplier, "p") == 0)
-	{
-		return 1e-12;
-	}
-
-	else if(strcmp(lowercase_multiplier, "n") == 0)
-	{
-		return 1e-9;
-	}
-
-	else if(strcmp(lowercase_multiplier, "u") == 0)
-	{
-		return 1e-6;
-	}
-
-	else if(strcmp(lowercase_multiplier, "m") == 0)
-	{
-		return 1e-3;
-	}
-
-	else if(strcmp(lowercase_multiplier, "k") == 0)
-	{
-		return 1e3;
-	}
-	
-	else if(strcmp(lowercase_multiplier, "meg") == 0)
-	{
-		return 1e6;
-	}
-
-	else if(strcmp(lowercase_multiplier, "g") == 0)
-	{
-		return 1e9;
-	}
-
-	else if(strcmp(lowercase_multiplier, "t") == 0)
-	{
-		return 1e12;
-	}
-
-	return -1;
-}
-
