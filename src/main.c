@@ -5,16 +5,8 @@
 #include "element_list.h"
 #include "spice_format.h"
 
-struct node_info_struct
-{
-	int device_type;
-	label_list* global_label_list;
-};
-
-typedef struct node_info_struct node_info;
-
 void print_element(int element_index, element elem, void* additional_data);
-void print_node(int label_index, label l, void* node_info_ptr);
+void print_node(int label_index, label l, void* type_int_ptr);
 
 int main(int argc, char* argv[])
 {
@@ -52,7 +44,7 @@ int main(int argc, char* argv[])
 	fclose(input);
 
 	printf("Circuit elements:\n");
-	element_list_enumerate(p_data.element_list, &print_element, (void*)&p_data.label_list);
+	element_list_enumerate(p_data.element_list, &print_element, NULL);
 	return result;
 }
 
@@ -67,10 +59,7 @@ void print_element(int element_index, element elem, void* additional_data)
 
 	printf("#%d: %s [%s]", id + 1, type_name, elem.name);
 
-	node_info n;
-	n.device_type = type;
-	n.global_label_list = *((label_list**)additional_data);	
-	label_list_enumerate(nodes, &print_node, (void*)&n);
+	label_list_enumerate(nodes, &print_node, (void*)&type);
 
 	printf("\n\tValue = ");
 	if(value.is_numeric)
@@ -84,10 +73,9 @@ void print_element(int element_index, element elem, void* additional_data)
 	}
 }
 
-void print_node(int label_index, label l, void* node_info_ptr)
+void print_node(int label_index, label l, void* type_int_ptr)
 {
-	node_info n = *((node_info*)node_info_ptr);
-	int type = n.device_type;
+	int type = *((int*)type_int_ptr);;
 
 	char two_node_terminal_names[2] = {'+', '-'};
 	char tjb_terminal_names[3] = {'C', 'B', 'E'};
