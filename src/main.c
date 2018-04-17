@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
 
 	fclose(input);
 
-	//if(result == 0)
+	if(result == 0)
 	{
 		printf("Circuit elements:\n");
 		element_list_enumerate(p_data.element_list, &print_element, NULL);
