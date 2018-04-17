@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include "generic_list.h"
 
@@ -30,6 +31,8 @@ int generic_list_insert(generic_list** list_ptr, void* value)
 		// Alloc error.
 		if(list == NULL)
 		{
+			fprintf(stderr, "Insufficient memory.\n");
+			exit(1);
 			return 1;
 		}
 
@@ -46,6 +49,8 @@ int generic_list_insert(generic_list** list_ptr, void* value)
 		// Alloc error.
 		if(new_element == NULL)
 		{
+			fprintf(stderr, "Insufficient memory.\n");
+			exit(1);
 			return 1;
 		}
 
@@ -58,6 +63,7 @@ int generic_list_insert(generic_list** list_ptr, void* value)
 		last_element->next = new_element;
 		new_element->prev = last_element;
 		new_element->value = value;		
+		new_element->next = NULL;
 	}
 
 	return 0;
@@ -102,3 +108,16 @@ int generic_list_clear(generic_list** list_ptr)
 
 	return 0;
 }
+
+void generic_list_enumerate(generic_list* list, void (*callback)(int, void*, void*), void* additional_data)
+{
+	int i;
+	generic_list* current_element = list;
+	for(i = 0; current_element != NULL; current_element = current_element->next, i++)
+	{
+		void* l = current_element->value;
+		(*callback)(i, l, additional_data);
+	}
+
+}
+

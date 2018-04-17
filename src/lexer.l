@@ -23,11 +23,12 @@ double get_multiplier_value(const char* multiplier_str);
 
 %}
 
-common_text [a-zA-Z0-9_]+
+misc_symbol ,|;|:|\(|\)|\[|\]|\{|\}|\+|-|\*|\/|<|>|=|!|&|\$|%|#|\^ 
+common_text ({misc_symbol}|[a-zA-Z0-9_])+
 whitespace [ \t]+
 new_line "\n"
 multiplier "f"|"p"|"n"|"u"|"m"|"k"|"meg"|"g"|"t"
-whole_number ([0-9])+ 
+whole_number (-)?([0-9])+{whitespace}*
 simple_number {whole_number}|({whole_number}"."{whole_number})
 sci_number {simple_number}"E"{simple_number}
 mult_number {simple_number}{multiplier}
@@ -46,6 +47,10 @@ text_value {common_text}$
 			return TK_NEW_LINE;
 		}
 
+{comment}	{ }
+
+
+
 {command_identifier}	{
 				if(yylineno > 1)
 				{
@@ -61,14 +66,6 @@ text_value {common_text}$
 			}
 		}
 	
-{label} 	{	
-			if(yylineno > 1)
-			{
-				char* label_name = remove_spaces(yytext);
-				strcpy(yylval->string, label_name);
-				return TK_LABEL;
-			}	
-		}			
 
 {simple_number_value} {
 			if(yylineno > 1)
@@ -121,7 +118,14 @@ text_value {common_text}$
 			}
 		}
 
-
+{label} 	{	
+			if(yylineno > 1)
+			{
+				char* label_name = remove_spaces(yytext);
+				strcpy(yylval->string, label_name);
+				return TK_LABEL;
+			}	
+		}			
 
 
 {text_value}	{

@@ -38,6 +38,9 @@ int label_list_insert(label_list** list_ptr, const char* label_name)
 	if(alloc_value->name == NULL)
 	{
 		free(alloc_value);
+
+		fprintf(stderr, "Insufficient memory.\n");
+		exit(1);
 		return 1;
 	}
 
@@ -48,6 +51,9 @@ int label_list_insert(label_list** list_ptr, const char* label_name)
 	if(result != 0)
 	{
 		free(alloc_value);
+
+		fprintf(stderr, "Insertion failed.\n");
+		exit(1);
 		return 1;
 	}
 

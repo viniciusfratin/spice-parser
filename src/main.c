@@ -6,7 +6,7 @@
 #include "spice_format.h"
 
 void print_element(int element_index, element elem, void* additional_data);
-void print_node(int label_index, label l, void* type_int_ptr);
+void print_node(int label_index, void* label_ptr, void* type_int_ptr);
 
 int main(int argc, char* argv[])
 {
@@ -43,8 +43,15 @@ int main(int argc, char* argv[])
 
 	fclose(input);
 
-	printf("Circuit elements:\n");
-	element_list_enumerate(p_data.element_list, &print_element, NULL);
+	//if(result == 0)
+	{
+		printf("Circuit elements:\n");
+		element_list_enumerate(p_data.element_list, &print_element, NULL);
+	}
+
+	element_list_clear(&p_data.element_list);
+	label_list_clear(&p_data.label_list);
+	
 	return result;
 }
 
@@ -59,7 +66,7 @@ void print_element(int element_index, element elem, void* additional_data)
 
 	printf("#%d: %s [%s]", id + 1, type_name, elem.name);
 
-	label_list_enumerate(nodes, &print_node, (void*)&type);
+	generic_list_enumerate(nodes, &print_node, (void*)&type);
 
 	printf("\n\tValue = ");
 	if(value.is_numeric)
@@ -73,14 +80,14 @@ void print_element(int element_index, element elem, void* additional_data)
 	}
 }
 
-void print_node(int label_index, label l, void* type_int_ptr)
+void print_node(int label_index, void* label_ptr, void* type_int_ptr)
 {
 	int type = *((int*)type_int_ptr);;
 
 	char two_node_terminal_names[2] = {'+', '-'};
 	char tjb_terminal_names[3] = {'C', 'B', 'E'};
 	char mosfet_terminal_names[3] = {'D', 'G', 'S'};
-	char four_node_terminal_names[4][2] = {"+", "-", "C+", "C-"};
+	char four_node_terminal_names[4][3] = {"+", "-", "C+", "C-"};
  
 	printf("\n\tNode #%d: ", label_index + 1);
 
@@ -115,7 +122,8 @@ void print_node(int label_index, label l, void* type_int_ptr)
 			break;		
 	}
 
-	printf("[%d]", l.global_id);
+	label l = *((label*)label_ptr);
+	printf("[%d]", l.id);
 }
 
 

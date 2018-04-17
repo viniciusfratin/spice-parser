@@ -81,113 +81,73 @@ command_parameters:
 element: 
 		two_node_element TK_LABEL TK_LABEL TK_VALUE
 			{
-				element elem;
-					
-				elem.type = get_element_type($1);
-				strcpy(elem.name, $1);
-				label_list_initialize(&elem.nodes);
-				label_list_insert(&elem.nodes, $2);
-				label_list_insert(&elem.nodes, $3);
-				elem.value = $4;
-
-				element_list_insert(&p_data->element_list, elem);
-
 				label_list_insert(&p_data->label_list, $2);
 				label_list_insert(&p_data->label_list, $3);
 
-
 				label *l1, *l2;
-				label_list_contains_name(elem.nodes, $2, &l1);
-				label_list_contains_name(elem.nodes, $3, &l2);
-
-				label *global_l1, *global_l2;
-				label_list_contains_name(p_data->label_list, $2, &global_l1);
-				label_list_contains_name(p_data->label_list, $3, &global_l2);
-
-				l1->global_id = global_l1->id;
-				l2->global_id = global_l2->id;
-				global_l1->global_id = global_l1->id;
-				global_l2->global_id = global_l2->id;
-
-			}
-		| three_node_element TK_LABEL TK_LABEL TK_LABEL TK_VALUE
-			{
+				label_list_contains_name(p_data->label_list, $2, &l1);
+				label_list_contains_name(p_data->label_list, $3, &l2);
+				
 				element elem;
 					
 				elem.type = get_element_type($1);
 				strcpy(elem.name, $1);
-				label_list_initialize(&elem.nodes);
-				label_list_insert(&elem.nodes, $2);
-				label_list_insert(&elem.nodes, $3);
-				label_list_insert(&elem.nodes, $4);
-				elem.value = $5;
+				generic_list_initialize(&elem.nodes);
+				generic_list_insert(&elem.nodes, (void*)l1);
+				generic_list_insert(&elem.nodes, (void*)l2);
+				elem.value = $4;
 
 				element_list_insert(&p_data->element_list, elem);
-
+			}
+		| three_node_element TK_LABEL TK_LABEL TK_LABEL TK_VALUE
+			{
 				label_list_insert(&p_data->label_list, $2);
 				label_list_insert(&p_data->label_list, $3);
 				label_list_insert(&p_data->label_list, $4);
 
-
 				label *l1, *l2, *l3;
-				label_list_contains_name(elem.nodes, $2, &l1);
-				label_list_contains_name(elem.nodes, $3, &l2);
-				label_list_contains_name(elem.nodes, $4, &l3);
-
-				label *global_l1, *global_l2, *global_l3;
-				label_list_contains_name(p_data->label_list, $2, &global_l1);
-				label_list_contains_name(p_data->label_list, $3, &global_l2);
-				label_list_contains_name(p_data->label_list, $4, &global_l3);
-
-				l1->global_id = global_l1->id;
-				l2->global_id = global_l2->id;
-				l3->global_id = global_l3->id;
-				global_l1->global_id = global_l1->id;
-				global_l2->global_id = global_l2->id;
-				global_l3->global_id = global_l3->id;
-
-			}
-		| four_node_element TK_LABEL TK_LABEL TK_LABEL TK_LABEL TK_VALUE
-			{
+				label_list_contains_name(p_data->label_list, $2, &l1);
+				label_list_contains_name(p_data->label_list, $3, &l2);
+				label_list_contains_name(p_data->label_list, $4, &l3);
+			
 				element elem;
 					
 				elem.type = get_element_type($1);
 				strcpy(elem.name, $1);
-				label_list_initialize(&elem.nodes);
-				label_list_insert(&elem.nodes, $2);
-				label_list_insert(&elem.nodes, $3);
-				label_list_insert(&elem.nodes, $4);
-				label_list_insert(&elem.nodes, $5);
-				elem.value = $6;
+				generic_list_initialize(&elem.nodes);
+				generic_list_insert(&elem.nodes, (void*)l1);
+				generic_list_insert(&elem.nodes, (void*)l2);
+				generic_list_insert(&elem.nodes, (void*)l3);
+				elem.value = $5;
 
 				element_list_insert(&p_data->element_list, elem);
 
+			}
+		| four_node_element TK_LABEL TK_LABEL TK_LABEL TK_LABEL TK_VALUE
+			{
 				label_list_insert(&p_data->label_list, $2);
 				label_list_insert(&p_data->label_list, $3);
 				label_list_insert(&p_data->label_list, $4);
 				label_list_insert(&p_data->label_list, $5);
 
-
 				label *l1, *l2, *l3, *l4;
-				label_list_contains_name(elem.nodes, $2, &l1);
-				label_list_contains_name(elem.nodes, $3, &l2);
-				label_list_contains_name(elem.nodes, $4, &l3);
-				label_list_contains_name(elem.nodes, $5, &l4);
+				label_list_contains_name(p_data->label_list, $2, &l1);
+				label_list_contains_name(p_data->label_list, $3, &l2);
+				label_list_contains_name(p_data->label_list, $4, &l3);
+				label_list_contains_name(p_data->label_list, $5, &l4);
+			
+				element elem;
+					
+				elem.type = get_element_type($1);
+				strcpy(elem.name, $1);
+				generic_list_initialize(&elem.nodes);
+				generic_list_insert(&elem.nodes, (void*)l1);
+				generic_list_insert(&elem.nodes, (void*)l2);
+				generic_list_insert(&elem.nodes, (void*)l3);
+				generic_list_insert(&elem.nodes, (void*)l4);
+				elem.value = $6;
 
-				label *global_l1, *global_l2, *global_l3, *global_l4;
-				label_list_contains_name(p_data->label_list, $2, &global_l1);
-				label_list_contains_name(p_data->label_list, $3, &global_l2);
-				label_list_contains_name(p_data->label_list, $4, &global_l3);
-				label_list_contains_name(p_data->label_list, $5, &global_l4);
-
-				l1->global_id = global_l1->id;
-				l2->global_id = global_l2->id;
-				l3->global_id = global_l3->id;
-				l4->global_id = global_l4->id;
-				global_l1->global_id = global_l1->id;
-				global_l2->global_id = global_l2->id;
-				global_l3->global_id = global_l3->id;
-				global_l4->global_id = global_l4->id;
+				element_list_insert(&p_data->element_list, elem);
 			}
 		;
 

@@ -42,7 +42,7 @@ struct element_struct
 	int id;
 	int type;
 	char name[512];
-	label_list* nodes;
+	generic_list* nodes;
 	element_value value;
 };
 

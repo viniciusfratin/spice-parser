@@ -14,5 +14,6 @@ int generic_list_initialize(generic_list** list_ptr);
 int generic_list_insert(generic_list** list_ptr, void* value);
 int generic_list_count(generic_list* list_ptr);
 int generic_list_clear(generic_list** list_ptr);
+void generic_list_enumerate(generic_list* list, void (*callback)(int, void*, void*), void* additional_data);
 
 #endif

@@ -8,7 +8,6 @@ typedef generic_list label_list;
 struct label_struct
 {
 	int id;
-	int global_id;
 	char name[256];
 };
 

@@ -20,16 +20,19 @@ int element_list_insert(element_list** list_ptr, element value)
 		// Already contains element.	
 		if(element_list_contains_name(*list_ptr, value.name) != -1)
 		{
+			fprintf(stderr, "Element %s already exists.\n", value.name);
+			exit(1);
 			return 1;
 		}
 
 		element_count = generic_list_count(*list_ptr);
 	}
-
 	element* alloc_value = (element*) malloc(sizeof(element));
 	// Alloc error.
 	if(alloc_value == NULL)
 	{
+		fprintf(stderr, "Insufficent memory.\n");
+		exit(1);
 		return 1;
 	}
 	
@@ -44,6 +47,9 @@ int element_list_insert(element_list** list_ptr, element value)
 	if(result != 0)
 	{
 		free(alloc_value);
+
+		fprintf(stderr, "Element insertion failed.\n");
+		exit(1);
 		return 1;
 	}
 
@@ -65,10 +71,11 @@ int element_list_contains_name(element_list* list, const char* element_name)
 		element* l = (element*) current_element->value;
 		char lowercase_current_name[512];
 		strcpy(lowercase_current_name, l->name);
-		convert_to_lowercase(lowercase_current_name);
+	 	convert_to_lowercase(lowercase_current_name);
 		if(strcmp(lowercase_current_name, lowercase_name) == 0)
 		{
 			found_index = current_index;
+
 			break;
 		}
 	}
@@ -90,6 +97,8 @@ int element_list_clear(element_list** list_ptr)
 	{
 		element* l = (element*) current_element->value;
 		free(l);
+
+		generic_list_clear(&l->nodes);
 
 		current_element = current_element->next;
 	}
