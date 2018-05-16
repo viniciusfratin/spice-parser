@@ -5,10 +5,14 @@
 #include "element_list.h"
 #include "spice_format.h"
 
-void print_element(int element_index, element elem, void* additional_data);
+void print_label(int label_index, label l, void* additional_data);
+void print_element(int element_index, element* element_ptr, void* additional_data);
 void print_node(int label_index, void* label_ptr, void* type_int_ptr);
 void execute_command(int position, void* command_ptr, void* additional_data);
-void start_mna();
+void start_mna(mna_data data);
+void classify_element_groups(int position, element* element_ptr, void* additional_data);
+void list_element_groups(int position, element* element_ptr, void* additional_data);
+void print_matrices();
 
 int main(int argc, char* argv[])
 {
@@ -26,20 +30,28 @@ int main(int argc, char* argv[])
 		exit(1);
 	}
 
+	label_list* labels;
+	element_list* elements;
+	generic_list* commands;
+	
+	label_list_initialize(&labels);
+	label_list_insert(&labels, "0");
+	element_list_initialize(&elements);
+	generic_list_initialize(&commands);
+
 	int result;
 
 	yyscan_t scanner;
 	struct parser_data p_data;
  
+	p_data.label_list = &labels;
+	p_data.element_list = &elements;
+	p_data.command_list = &commands;
+
 	yylex_init(&scanner);
 
 	yyset_in(input, scanner);
-
-	label_list_initialize(&p_data.label_list);
-	label_list_insert(&p_data.label_list, "0");
-	element_list_initialize(&p_data.element_list);
-	generic_list_initialize(&p_data.command_list);
-
+	
 	result = yyparse(scanner, &p_data);
 
 	yylex_destroy(scanner);
@@ -48,20 +60,35 @@ int main(int argc, char* argv[])
 
 	if(result == 0)
 	{
-		printf("Circuit elements:\n");
-		element_list_enumerate(p_data.element_list, &print_element, NULL);	
-		generic_list_enumerate(p_data.command_list, &execute_command, NULL);
+		printf("Circuit nodes:\n");
+		label_list_enumerate(labels, &print_label, NULL);
+
+		printf("\nCircuit elements:\n");
+		element_list_enumerate(elements, &print_element, NULL);	
+
+		mna_data data;
+		data.nodes = labels;
+		data.elements = elements;
+
+		generic_list_enumerate(commands, &execute_command, (void*)&data);
 	}
 
-	generic_list_clear(&p_data.command_list);
-	element_list_clear(&p_data.element_list);
-	label_list_clear(&p_data.label_list);
+	generic_list_clear(&commands);
+	element_list_clear(&elements);
+	label_list_clear(&labels);
 	
 	return result;
 }
 
-void print_element(int element_index, element elem, void* additional_data)
+void print_label(int label_index, label l, void* additional_data)
 {
+	printf("Label: %d\n", l.id);
+}
+
+void print_element(int element_index, element* element_ptr, void* additional_data)
+{
+	element elem = *element_ptr;
+
 	int id = elem.id;
 	int type = elem.type;
 	char type_name[64];
@@ -97,7 +124,6 @@ void print_node(int label_index, void* label_ptr, void* type_int_ptr)
  
 	printf("\n\tNode #%d: ", label_index + 1);
 
-	int is_cc = 0;
 	switch(type)
 	{
 		case TYPE_RESISTOR:
@@ -122,7 +148,6 @@ void print_node(int label_index, void* label_ptr, void* type_int_ptr)
 	
 		case TYPE_CCC_SOURCE:
 		case TYPE_CCV_SOURCE:
-			is_cc = 1;
 			printf("%c",
 				cc_sources_terminal_names[label_index]);
 			break;
@@ -135,15 +160,7 @@ void print_node(int label_index, void* label_ptr, void* type_int_ptr)
 	}
 
 	label l = *((label*)label_ptr);
-	if(is_cc == 0)
-	{
-		printf("[%d]", l.id);
-	}
-
-	else
-	{
-		printf("[%s]", l.name);
-	}
+	printf("[%d]", l.id);
 }
 
 void execute_command(int position, void* command_ptr, void* additional_data)
@@ -152,7 +169,7 @@ void execute_command(int position, void* command_ptr, void* additional_data)
 	switch(cmd.type)
 	{
 		case COMMAND_OP:
-			start_mna();
+			start_mna(*((mna_data*)additional_data));
 			break;
 
 		case COMMAND_INVALID:
@@ -162,7 +179,124 @@ void execute_command(int position, void* command_ptr, void* additional_data)
 	}
 }
 
-void start_mna()
+int number_of_nodes;
+int number_of_extra_currents;
+int matrix_dim;
+int *extra_currents_positions;
+double **h_matrix;
+double **b_matrix;
+
+
+void start_mna(mna_data data)
 {
 	printf("STARTING MNA!\n");
+
+	int number_of_elements = element_list_count(data.elements);
+	extra_currents_positions = (int*) malloc(number_of_elements * sizeof(int));
+	if(extra_currents_positions == NULL)
+	{
+		fprintf(stderr, "Alloc error.\n");
+		exit(1);
+	}
+
+	number_of_nodes = label_list_count(data.nodes);
+	number_of_extra_currents = 0;
+	printf("Classifying elements in groups...\n");
+	element_list_enumerate(data.elements, &classify_element_groups, (void*)&data.elements);
+
+	printf("\nClassification result:\n");
+	element_list_enumerate(data.elements, &list_element_groups, NULL);
+
+	
+	printf("\nAllocating matrices...\n");
+	matrix_dim = number_of_nodes + number_of_extra_currents;
+	
+	h_matrix = (double**) malloc(matrix_dim * sizeof(double*));
+	if(h_matrix == NULL)
+	{
+		fprintf(stderr, "Alloc error.\n");
+		exit(1);
+	}	
+
+	int i;
+	for(i = 0; i < matrix_dim; i++)
+	{
+		h_matrix[i] = (double*) calloc(matrix_dim, sizeof(double));
+		if(h_matrix[i] == NULL)
+		{
+			fprintf(stderr, "Alloc error.\n");
+			exit(1);
+		}
+	}
+
+	b_matrix = (double**) malloc(1 * sizeof(double*));
+	if(b_matrix == NULL)
+	{
+		fprintf(stderr, "Alloc error.\n");
+		exit(1);
+	}
+
+	b_matrix[0] = (double*) calloc(matrix_dim, sizeof(double));
+	if(b_matrix[0] == NULL)
+	{
+		fprintf(stderr, "Alloc error.\n");
+		exit(1);
+	}
+
+	printf("\nAllocation successfull.\n");	
+	print_matrices();
+}
+
+void classify_element_groups(int position, element* element_ptr, void* additional_data)
+{
+	element_list* elements = *((element_list**)additional_data);
+	// Default.
+	element_ptr->group = 1;
+
+	switch(element_ptr->type)
+	{
+		case TYPE_CCC_SOURCE:
+		case TYPE_CCV_SOURCE:
+			;
+			element* ref_elem = (element*)element_ptr->ref_elements->value;
+			ref_elem->group = 2;
+			number_of_extra_currents++;
+			extra_currents_positions[ref_elem->id] = number_of_extra_currents + number_of_nodes - 1;
+			extra_currents_positions[position] = -1;
+			printf("-> Changed element %s to group 2 due to element %s\n", ref_elem->name, element_ptr->name);
+			break;
+
+		case TYPE_V_SOURCE:
+		case TYPE_VCV_SOURCE:
+			element_ptr->group = 2;
+			number_of_extra_currents++;
+			extra_currents_positions[position] = number_of_extra_currents + number_of_nodes - 1;
+			break;
+
+		default:
+			extra_currents_positions[position] = -1;
+			break;
+	}
+}
+
+void list_element_groups(int position, element* element_ptr, void* additional_data)
+{
+	printf("Element: %s => Group %d; Extra current index %d\n", element_ptr->name, element_ptr->group, extra_currents_positions[position]);
+}
+
+void print_matrices()
+{
+	int i, j;
+	for(i = 0; i < matrix_dim; i++)
+	{
+		for(j = 0; j < matrix_dim; j++)
+		{
+			printf("H(%d,%d) = %le\n", i + 1, j + 1, h_matrix[i][j]);
+		}
+	}
+
+	for(i = 0; i < matrix_dim; i++)
+	{
+		printf("B(%d) = %le\n", i + 1, b_matrix[0][i]);
+	}
 }

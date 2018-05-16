@@ -44,9 +44,11 @@ typedef struct element_value_struct element_value;
 struct element_struct
 {
 	int id;
+	int group;
 	int type;
 	char name[512];
-	generic_list* nodes;
+	generic_list* nodes; // generic_list of label*
+	generic_list* ref_elements; // generic_list of element*
 	element_value value;
 };
 

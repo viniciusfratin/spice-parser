@@ -60,6 +60,11 @@ int label_list_insert(label_list** list_ptr, const char* label_name)
 	return 0;
 }
 
+int label_list_count(label_list* list)
+{
+	return generic_list_count(list);
+}
+
 int label_list_contains_name(label_list* list, const char* label_name, label** ret_label)
 {
 	int found_index = -1;

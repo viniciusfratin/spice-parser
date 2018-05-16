@@ -40,6 +40,7 @@ int element_list_insert(element_list** list_ptr, element value)
 	alloc_value->type = value.type;
 	strcpy(alloc_value->name, value.name);
 	alloc_value->nodes = value.nodes;
+	alloc_value->ref_elements = value.ref_elements;
 	alloc_value->value = value.value;
 	
 	int result = generic_list_insert(list_ptr, (void*) alloc_value);
@@ -54,6 +55,11 @@ int element_list_insert(element_list** list_ptr, element value)
 	}
 
 	return 0;
+}
+
+int element_list_count(element_list* list)
+{
+	return generic_list_count(list);
 }
 
 int element_list_contains_name(element_list* list, const char* element_name, element** ret_element)
@@ -112,13 +118,13 @@ int element_list_clear(element_list** list_ptr)
 	return clear_result;
 }
 
-void element_list_enumerate(element_list* list, void (*callback)(int, element, void*), void* additional_data)
+void element_list_enumerate(element_list* list, void (*callback)(int, element*, void*), void* additional_data)
 {
 	int i;
 	element_list* current_element = list;
 	for(i = 0; current_element != NULL; current_element = current_element->next, i++)
 	{
 		element* l = (element*) current_element->value;
-		(*callback)(i, *l, additional_data);
+		(*callback)(i, l, additional_data);
 	}
 }

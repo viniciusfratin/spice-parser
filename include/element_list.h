@@ -7,9 +7,10 @@
 typedef generic_list element_list;
 
 int element_list_initialize(element_list** list_ptr);
+int element_list_count(element_list* list);
 int element_list_insert(element_list** list_ptr, element value);
 int element_list_contains_name(element_list* list, const char* element_name, element** ret_element);
 int element_list_clear(element_list** list_ptr);
-void element_list_enumerate(element_list* list, void (*callback)(int, element, void*), void* additional_data);
+void element_list_enumerate(element_list* list, void (*callback)(int, element*, void*), void* additional_data);
 
 #endif

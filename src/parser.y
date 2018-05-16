@@ -80,7 +80,7 @@ command_identifier:
 				cmd.type = command_type;
 				generic_list_initialize(&cmd.parameters);
 
-				generic_list_insert(&p_data->command_list, (void*)&cmd);
+				generic_list_insert(p_data->command_list, (void*)&cmd);
 			}
 		;
 
@@ -92,12 +92,12 @@ command_parameters:
 element: 
 		two_node_element TK_LABEL TK_LABEL TK_VALUE
 			{
-				label_list_insert(&p_data->label_list, $2);
-				label_list_insert(&p_data->label_list, $3);
+				label_list_insert(p_data->label_list, $2);
+				label_list_insert(p_data->label_list, $3);
 
 				label *l1, *l2;
-				label_list_contains_name(p_data->label_list, $2, &l1);
-				label_list_contains_name(p_data->label_list, $3, &l2);
+				label_list_contains_name(*p_data->label_list, $2, &l1);
+				label_list_contains_name(*p_data->label_list, $3, &l2);
 				
 				element elem;
 					
@@ -108,27 +108,29 @@ element:
 				generic_list_insert(&elem.nodes, (void*)l2);
 				elem.value = $4;
 
-				element_list_insert(&p_data->element_list, elem);
+				element_list_insert(p_data->element_list, elem);
 			}
 		| three_node_element TK_LABEL TK_LABEL TK_LABEL TK_VALUE
 			{
 				special_cc c = $1;
 
-				label_list_insert(&p_data->label_list, $2);
-				label_list_insert(&p_data->label_list, $3);
-
-				//if(!c.is_cc)
-				{
-					label_list_insert(&p_data->label_list, $4);
+				label_list_insert(p_data->label_list, $2);
+				label_list_insert(p_data->label_list, $3);
+		
+				element* element_ptr;
+				int is_elem = element_list_contains_name(*p_data->element_list, $4, &element_ptr);
+				if(!is_elem)
+				{	
+					label_list_insert(p_data->label_list, $4);
 				}
 
 				label *l1, *l2, *l3;
-				label_list_contains_name(p_data->label_list, $2, &l1);
-				label_list_contains_name(p_data->label_list, $3, &l2);
+				label_list_contains_name(*p_data->label_list, $2, &l1);
+				label_list_contains_name(*p_data->label_list, $3, &l2);
 
-				//if(!c.is_cc)
+				if(!is_elem)
 				{
-					label_list_contains_name(p_data->label_list, $4, &l3);
+					label_list_contains_name(*p_data->label_list, $4, &l3);
 				}
 
 				element elem;
@@ -139,36 +141,34 @@ element:
 				generic_list_insert(&elem.nodes, (void*)l1);
 				generic_list_insert(&elem.nodes, (void*)l2);
 					
-				//if(!c.is_cc)
+				if(!is_elem)
 				{
 					generic_list_insert(&elem.nodes, (void*)l3);
 				}
 
-				/*else
+				else
 				{
-					element* e;
-					element_list_contains_name(p_data->element_list, $4, &e);
-
-					generic_list_insert(&elem.nodes, (void*)e);
-				}*/
+					generic_list_initialize(&elem.ref_elements);
+					generic_list_insert(&elem.ref_elements, (void*)element_ptr);
+				}
 
 				elem.value = $5;
 
-				element_list_insert(&p_data->element_list, elem);
+				element_list_insert(p_data->element_list, elem);
 
 			}
 		| four_node_element TK_LABEL TK_LABEL TK_LABEL TK_LABEL TK_VALUE
 			{
-				label_list_insert(&p_data->label_list, $2);
-				label_list_insert(&p_data->label_list, $3);
-				label_list_insert(&p_data->label_list, $4);
-				label_list_insert(&p_data->label_list, $5);
+				label_list_insert(p_data->label_list, $2);
+				label_list_insert(p_data->label_list, $3);
+				label_list_insert(p_data->label_list, $4);
+				label_list_insert(p_data->label_list, $5);
 
 				label *l1, *l2, *l3, *l4;
-				label_list_contains_name(p_data->label_list, $2, &l1);
-				label_list_contains_name(p_data->label_list, $3, &l2);
-				label_list_contains_name(p_data->label_list, $4, &l3);
-				label_list_contains_name(p_data->label_list, $5, &l4);
+				label_list_contains_name(*p_data->label_list, $2, &l1);
+				label_list_contains_name(*p_data->label_list, $3, &l2);
+				label_list_contains_name(*p_data->label_list, $4, &l3);
+				label_list_contains_name(*p_data->label_list, $5, &l4);
 			
 				element elem;
 					
@@ -181,7 +181,7 @@ element:
 				generic_list_insert(&elem.nodes, (void*)l4);
 				elem.value = $6;
 
-				element_list_insert(&p_data->element_list, elem);
+				element_list_insert(p_data->element_list, elem);
 			}
 		;
 
