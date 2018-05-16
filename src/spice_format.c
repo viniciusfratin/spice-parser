@@ -175,3 +175,15 @@ double get_multiplier_value(const char* multiplier_str)
 	return -1;
 }
 
+int get_command_type(const char* command_name)
+{
+	if(!strcmp(command_name, ".OP"))
+	{
+		return COMMAND_OP;
+	}
+
+	else
+	{
+		return COMMAND_INVALID;
+	}
+}

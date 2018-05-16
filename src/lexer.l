@@ -36,8 +36,7 @@ simple_number_value {simple_number}$
 sci_number_value {sci_number}$
 mult_number_value {mult_number}$
 comment "*"(.*)
-command_identifier ^("."{common_text}){whitespace}
-element_identifier ^(.{common_text}){whitespace}
+identifier ^(.{common_text})({whitespace})*
 label {common_text}{whitespace}
 text_value {common_text}$
 
@@ -50,19 +49,19 @@ text_value {common_text}$
 {comment}	{ }
 
 
-
-{command_identifier}	{
-				if(yylineno > 1)
-				{
-					return TK_COMMAND;
-				}	
-			}
-
-{element_identifier}	{
+{identifier}	{
 			if(yylineno > 1)
 			{
 				strcpy(yylval->string, remove_spaces(yytext));	
-				return get_element_token_type(yylval->string);
+				if(get_element_token_type(yylval->string) != TK_INVALID_ELEMENT)
+				{
+					return get_element_token_type(yylval->string);
+				}
+
+				else
+				{
+					return TK_COMMAND;
+				}
 			}
 		}
 	

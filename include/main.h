@@ -8,6 +8,7 @@ struct parser_data
 {
 	label_list* label_list;
 	element_list* element_list;
+	generic_list* command_list;
 };
 
 #endif

@@ -27,7 +27,7 @@ int yyerror(YYLTYPE *locp, yyscan_t scanner, struct parser_data *p_data, const c
 }
 
 %token TK_NEW_LINE
-%token TK_COMMAND
+%token <string> TK_COMMAND
 %token <string> TK_LABEL
 %token <value> TK_VALUE
 %token <string> TK_RESISTOR
@@ -71,6 +71,15 @@ command:
 
 command_identifier:
 		TK_COMMAND
+			{
+				int command_type = get_command_type($1);
+
+				command cmd;
+				cmd.type = command_type;
+				generic_list_initialize(&cmd.parameters);
+
+				generic_list_insert(&p_data->command_list, (void*)&cmd);
+			}
 		;
 
 command_parameters:
