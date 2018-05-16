@@ -19,11 +19,13 @@
 
 int yyerror(YYLTYPE *locp, yyscan_t scanner, struct parser_data *p_data, const char *msg);
 
+
 %}
 
 %union {
 	char string[512];
 	element_value value;
+	special_cc cc;
 }
 
 %token TK_NEW_LINE
@@ -45,7 +47,7 @@ int yyerror(YYLTYPE *locp, yyscan_t scanner, struct parser_data *p_data, const c
 %token <string> TK_INVALID_ELEMENT
 
 %type <string> two_node_element
-%type <string> three_node_element
+%type <cc> three_node_element
 %type <string> four_node_element
 
 %%
@@ -110,23 +112,46 @@ element:
 			}
 		| three_node_element TK_LABEL TK_LABEL TK_LABEL TK_VALUE
 			{
+				special_cc c = $1;
+
 				label_list_insert(&p_data->label_list, $2);
 				label_list_insert(&p_data->label_list, $3);
-				label_list_insert(&p_data->label_list, $4);
+
+				//if(!c.is_cc)
+				{
+					label_list_insert(&p_data->label_list, $4);
+				}
 
 				label *l1, *l2, *l3;
 				label_list_contains_name(p_data->label_list, $2, &l1);
 				label_list_contains_name(p_data->label_list, $3, &l2);
-				label_list_contains_name(p_data->label_list, $4, &l3);
-			
+
+				//if(!c.is_cc)
+				{
+					label_list_contains_name(p_data->label_list, $4, &l3);
+				}
+
 				element elem;
 					
-				elem.type = get_element_type($1);
-				strcpy(elem.name, $1);
+				elem.type = get_element_type(c.string);
+				strcpy(elem.name, c.string);
 				generic_list_initialize(&elem.nodes);
 				generic_list_insert(&elem.nodes, (void*)l1);
 				generic_list_insert(&elem.nodes, (void*)l2);
-				generic_list_insert(&elem.nodes, (void*)l3);
+					
+				//if(!c.is_cc)
+				{
+					generic_list_insert(&elem.nodes, (void*)l3);
+				}
+
+				/*else
+				{
+					element* e;
+					element_list_contains_name(p_data->element_list, $4, &e);
+
+					generic_list_insert(&elem.nodes, (void*)e);
+				}*/
+
 				elem.value = $5;
 
 				element_list_insert(&p_data->element_list, elem);
@@ -170,15 +195,42 @@ two_node_element:
 	;
 
 three_node_element:
-		TK_TJB 		{ strcpy($$, $1); }
-		| TK_MOSFET 	{ strcpy($$, $1); }
+		TK_TJB 		
+			{ 
+				special_cc c;
+				c.is_cc = 0;
+				strcpy(c.string, $1);
+				$$ = c; 
+			}
+
+		| TK_MOSFET 	
+			{ 
+				special_cc c;
+				c.is_cc = 0;
+				strcpy(c.string, $1); 
+				$$ = c;
+			}
+
+		| TK_CCV_SOURCE 
+			{ 
+				special_cc c;
+				c.is_cc = 1;
+				strcpy(c.string, $1); 
+				$$ = c;
+			}
+
+		| TK_CCC_SOURCE 
+			{ 
+				special_cc c;
+				c.is_cc = 1;
+				strcpy(c.string, $1); 
+				$$ = c;
+			}
 	;
 
 four_node_element:
 		TK_VCV_SOURCE	{ strcpy($$, $1); }
-		| TK_CCC_SOURCE { strcpy($$, $1); }
 		| TK_VCC_SOURCE { strcpy($$, $1); }
-		| TK_CCV_SOURCE { strcpy($$, $1); }
 		
 %%
 

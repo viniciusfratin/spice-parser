@@ -18,7 +18,7 @@ int element_list_insert(element_list** list_ptr, element value)
 	if(list_ptr != NULL)
 	{		
 		// Already contains element.	
-		if(element_list_contains_name(*list_ptr, value.name) != -1)
+		if(element_list_contains_name(*list_ptr, value.name, NULL) != -1)
 		{
 			fprintf(stderr, "Element %s already exists.\n", value.name);
 			exit(1);
@@ -56,7 +56,7 @@ int element_list_insert(element_list** list_ptr, element value)
 	return 0;
 }
 
-int element_list_contains_name(element_list* list, const char* element_name)
+int element_list_contains_name(element_list* list, const char* element_name, element** ret_element)
 {
 	int found_index = -1;
 
@@ -75,6 +75,11 @@ int element_list_contains_name(element_list* list, const char* element_name)
 		if(strcmp(lowercase_current_name, lowercase_name) == 0)
 		{
 			found_index = current_index;
+			
+			if(ret_element != NULL)
+			{
+				*ret_element = l;
+			}
 
 			break;
 		}

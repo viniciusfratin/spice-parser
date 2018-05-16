@@ -60,5 +60,12 @@ struct command_struct
 
 typedef struct command_struct command;
 
+struct special_cc_struct
+{
+	int is_cc;
+	char string[512];
+};
+
+typedef struct special_cc_struct special_cc;
 
 #endif
