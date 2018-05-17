@@ -11,12 +11,4 @@ struct parser_data
 	generic_list** command_list;
 };
 
-struct mna_data_struct
-{
-	label_list* nodes;
-	element_list* elements;
-};
-
-typedef struct mna_data_struct mna_data;
-
 #endif

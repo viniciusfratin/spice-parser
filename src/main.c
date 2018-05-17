@@ -4,15 +4,13 @@
 #include "label_list.h"
 #include "element_list.h"
 #include "spice_format.h"
+#include "mna.h"
 
 void print_label(int label_index, label l, void* additional_data);
 void print_element(int element_index, element* element_ptr, void* additional_data);
 void print_node(int label_index, void* label_ptr, void* type_int_ptr);
 void execute_command(int position, void* command_ptr, void* additional_data);
 void start_mna(mna_data data);
-void classify_element_groups(int position, element* element_ptr, void* additional_data);
-void list_element_groups(int position, element* element_ptr, void* additional_data);
-void print_matrices();
 
 int main(int argc, char* argv[])
 {
@@ -60,11 +58,11 @@ int main(int argc, char* argv[])
 
 	if(result == 0)
 	{
-		printf("Circuit nodes:\n");
-		label_list_enumerate(labels, &print_label, NULL);
+		//printf("Circuit nodes:\n");
+		//label_list_enumerate(labels, &print_label, NULL);
 
-		printf("\nCircuit elements:\n");
-		element_list_enumerate(elements, &print_element, NULL);	
+		//printf("\nCircuit elements:\n");
+		//element_list_enumerate(elements, &print_element, NULL);	
 
 		mna_data data;
 		data.nodes = labels;
@@ -179,124 +177,4 @@ void execute_command(int position, void* command_ptr, void* additional_data)
 	}
 }
 
-int number_of_nodes;
-int number_of_extra_currents;
-int matrix_dim;
-int *extra_currents_positions;
-double **h_matrix;
-double **b_matrix;
 
-
-void start_mna(mna_data data)
-{
-	printf("STARTING MNA!\n");
-
-	int number_of_elements = element_list_count(data.elements);
-	extra_currents_positions = (int*) malloc(number_of_elements * sizeof(int));
-	if(extra_currents_positions == NULL)
-	{
-		fprintf(stderr, "Alloc error.\n");
-		exit(1);
-	}
-
-	number_of_nodes = label_list_count(data.nodes);
-	number_of_extra_currents = 0;
-	printf("Classifying elements in groups...\n");
-	element_list_enumerate(data.elements, &classify_element_groups, (void*)&data.elements);
-
-	printf("\nClassification result:\n");
-	element_list_enumerate(data.elements, &list_element_groups, NULL);
-
-	
-	printf("\nAllocating matrices...\n");
-	matrix_dim = number_of_nodes + number_of_extra_currents;
-	
-	h_matrix = (double**) malloc(matrix_dim * sizeof(double*));
-	if(h_matrix == NULL)
-	{
-		fprintf(stderr, "Alloc error.\n");
-		exit(1);
-	}	
-
-	int i;
-	for(i = 0; i < matrix_dim; i++)
-	{
-		h_matrix[i] = (double*) calloc(matrix_dim, sizeof(double));
-		if(h_matrix[i] == NULL)
-		{
-			fprintf(stderr, "Alloc error.\n");
-			exit(1);
-		}
-	}
-
-	b_matrix = (double**) malloc(1 * sizeof(double*));
-	if(b_matrix == NULL)
-	{
-		fprintf(stderr, "Alloc error.\n");
-		exit(1);
-	}
-
-	b_matrix[0] = (double*) calloc(matrix_dim, sizeof(double));
-	if(b_matrix[0] == NULL)
-	{
-		fprintf(stderr, "Alloc error.\n");
-		exit(1);
-	}
-
-	printf("\nAllocation successfull.\n");	
-	print_matrices();
-}
-
-void classify_element_groups(int position, element* element_ptr, void* additional_data)
-{
-	element_list* elements = *((element_list**)additional_data);
-	// Default.
-	element_ptr->group = 1;
-
-	switch(element_ptr->type)
-	{
-		case TYPE_CCC_SOURCE:
-		case TYPE_CCV_SOURCE:
-			;
-			element* ref_elem = (element*)element_ptr->ref_elements->value;
-			ref_elem->group = 2;
-			number_of_extra_currents++;
-			extra_currents_positions[ref_elem->id] = number_of_extra_currents + number_of_nodes - 1;
-			extra_currents_positions[position] = -1;
-			printf("-> Changed element %s to group 2 due to element %s\n", ref_elem->name, element_ptr->name);
-			break;
-
-		case TYPE_V_SOURCE:
-		case TYPE_VCV_SOURCE:
-			element_ptr->group = 2;
-			number_of_extra_currents++;
-			extra_currents_positions[position] = number_of_extra_currents + number_of_nodes - 1;
-			break;
-
-		default:
-			extra_currents_positions[position] = -1;
-			break;
-	}
-}
-
-void list_element_groups(int position, element* element_ptr, void* additional_data)
-{
-	printf("Element: %s => Group %d; Extra current index %d\n", element_ptr->name, element_ptr->group, extra_currents_positions[position]);
-}
-
-void print_matrices()
-{
-	int i, j;
-	for(i = 0; i < matrix_dim; i++)
-	{
-		for(j = 0; j < matrix_dim; j++)
-		{
-			printf("H(%d,%d) = %le\n", i + 1, j + 1, h_matrix[i][j]);
-		}
-	}
-
-	for(i = 0; i < matrix_dim; i++)
-	{
-		printf("B(%d) = %le\n", i + 1, b_matrix[0][i]);
-	}
-}
