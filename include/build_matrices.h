@@ -13,6 +13,5 @@ void generate_ccv_source_stamp(element* element_ptr);
 void generate_ccc_source_stamp(element* element_ptr);
 void generate_vcc_source_stamp(element* element_ptr);
 void list_element_groups(int position, element* element_ptr, void* additional_data);
-void print_matrices();
 
 #endif

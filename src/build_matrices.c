@@ -367,21 +367,4 @@ void list_element_groups(int position, element* element_ptr, void* additional_da
 	printf("Element: %s => Group %d; Extra current index %d\n", element_ptr->name, element_ptr->group, extra_currents_positions[position]);
 }
 
-void print_matrices()
-{
-	printf("\n");
-	int i, j;
-	for(i = 0; i < matrix_dim; i++)
-	{
-		for(j = 0; j < matrix_dim; j++)
-		{
-			printf("H(%d,%d) = %le\n", i + 1, j + 1, h_matrix[i][j]);
-		}
-	}
 
-	printf("\n");
-	for(i = 0; i < matrix_dim; i++)
-	{
-		printf("B(%d) = %le\n", i + 1, b_vector[i]);
-	}
-}

@@ -10,7 +10,6 @@ void print_label(int label_index, label l, void* additional_data);
 void print_element(int element_index, element* element_ptr, void* additional_data);
 void print_node(int label_index, void* label_ptr, void* type_int_ptr);
 void execute_command(int position, void* command_ptr, void* additional_data);
-void start_mna(mna_data data);
 
 int main(int argc, char* argv[])
 {
@@ -57,13 +56,7 @@ int main(int argc, char* argv[])
 	fclose(input);
 
 	if(result == 0)
-	{
-		//printf("Circuit nodes:\n");
-		//label_list_enumerate(labels, &print_label, NULL);
-
-		//printf("\nCircuit elements:\n");
-		//element_list_enumerate(elements, &print_element, NULL);	
-
+	{	
 		mna_data data;
 		data.nodes = labels;
 		data.elements = elements;
