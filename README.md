@@ -20,4 +20,5 @@ Just execute `make` in the main directory. A binary file will be generated in th
 
 #### Author: 
 Vinícius Fratin, UFRGS.
+
 vinicius.fratin@inf.ufrgs.br
