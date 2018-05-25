@@ -18,6 +18,6 @@ int label_list_insert(label_list** list_ptr, const char* label_name);
 int label_list_count(label_list* list);
 int label_list_contains_name(label_list* list, const char* label_name, label** ret_label);
 int label_list_clear(label_list** list_ptr);
-void label_list_enumerate(label_list* list, void (*callback)(int, label, void*), void* additional_data);
+void label_list_enumerate(label_list* list, void (*callback)(int, label*, void*), void* additional_data);
 
 #endif

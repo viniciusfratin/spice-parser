@@ -103,6 +103,7 @@ element:
 					
 				elem.type = get_element_type($1);
 				strcpy(elem.name, $1);
+				elem.is_set = 1;
 				generic_list_initialize(&elem.nodes);
 				generic_list_insert(&elem.nodes, (void*)l1);
 				generic_list_insert(&elem.nodes, (void*)l2);
@@ -116,19 +117,35 @@ element:
 
 				label_list_insert(p_data->label_list, $2);
 				label_list_insert(p_data->label_list, $3);
-		
+			
 				element* element_ptr;
-				int is_elem = element_list_contains_name(*p_data->element_list, $4, &element_ptr);
+				element_list_contains_name(*p_data->element_list, $4, &element_ptr);
+				
+				int is_elem = !!element_ptr;
 				if(!is_elem)
 				{	
-					label_list_insert(p_data->label_list, $4);
+					if(c.is_cc)
+					{
+						printf("CC! %s\n", c.string);
+						element dummy_elem;
+					
+						strcpy(dummy_elem.name, $4);
+						dummy_elem.is_set = 0;
+						element_list_insert(p_data->element_list, dummy_elem);
+						element_list_contains_name(*p_data->element_list, $4, &element_ptr);
+					}
+
+					else
+					{
+						label_list_insert(p_data->label_list, $4);
+					}
 				}
 
 				label *l1, *l2, *l3;
 				label_list_contains_name(*p_data->label_list, $2, &l1);
 				label_list_contains_name(*p_data->label_list, $3, &l2);
 
-				if(!is_elem)
+				if(!is_elem && !c.is_cc)
 				{
 					label_list_contains_name(*p_data->label_list, $4, &l3);
 				}
@@ -137,11 +154,12 @@ element:
 					
 				elem.type = get_element_type(c.string);
 				strcpy(elem.name, c.string);
+				elem.is_set = 1;
 				generic_list_initialize(&elem.nodes);
 				generic_list_insert(&elem.nodes, (void*)l1);
 				generic_list_insert(&elem.nodes, (void*)l2);
 					
-				if(!is_elem)
+				if(!is_elem && !c.is_cc)
 				{
 					generic_list_insert(&elem.nodes, (void*)l3);
 				}
@@ -174,6 +192,7 @@ element:
 					
 				elem.type = get_element_type($1);
 				strcpy(elem.name, $1);
+				elem.is_set = 1;
 				generic_list_initialize(&elem.nodes);
 				generic_list_insert(&elem.nodes, (void*)l1);
 				generic_list_insert(&elem.nodes, (void*)l2);

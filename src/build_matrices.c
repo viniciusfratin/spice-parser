@@ -5,6 +5,14 @@
 #include "mna.h"
 #include "build_matrices.h"
 
+void set_nodes(int position, label* node, void* additional_data)
+{
+	if(node->id > 0)
+	{
+		matrix_pointers[node->id - 1] = node;
+	}
+}
+
 void classify_element_groups(int position, element* element_ptr, void* additional_data)
 {
 	element_list* elements = *((element_list**)additional_data);
@@ -15,6 +23,7 @@ void classify_element_groups(int position, element* element_ptr, void* additiona
 	{
 		case TYPE_CCV_SOURCE:
 			element_ptr->group = 2;
+			matrix_pointers[number_of_extra_currents + number_of_nodes - 1] = element_ptr;
 			number_of_extra_currents++;
 			extra_currents_positions[position] = number_of_extra_currents + number_of_nodes - 1;
 
@@ -22,6 +31,7 @@ void classify_element_groups(int position, element* element_ptr, void* additiona
 			;
 			element* ref_elem = (element*)element_ptr->ref_elements->value;
 			ref_elem->group = 2;
+			matrix_pointers[number_of_extra_currents + number_of_nodes - 1] = ref_elem;
 			number_of_extra_currents++;
 			extra_currents_positions[ref_elem->id] = number_of_extra_currents + number_of_nodes - 1;
 			if(element_ptr->type == TYPE_CCC_SOURCE)
@@ -34,6 +44,7 @@ void classify_element_groups(int position, element* element_ptr, void* additiona
 		case TYPE_V_SOURCE:
 		case TYPE_VCV_SOURCE:
 			element_ptr->group = 2;
+			matrix_pointers[number_of_extra_currents + number_of_nodes - 1] = element_ptr;
 			number_of_extra_currents++;
 			extra_currents_positions[position] = number_of_extra_currents + number_of_nodes - 1;
 			break;
@@ -77,7 +88,7 @@ void generate_element_stamps(int position, element* element_ptr, void* additiona
 			break;
 
 		default:
-			fprintf(stderr, "Unsupported element.\n");
+			fprintf(stderr, "Unsupported element %s.\n", element_ptr->name);
 			exit(1);
 	}
 }

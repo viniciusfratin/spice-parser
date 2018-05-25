@@ -14,44 +14,66 @@ int element_list_initialize(element_list** list_ptr)
 int element_list_insert(element_list** list_ptr, element value)
 {
 	int element_count = 0;
+
+	int is_existing_element = 0;
+	element* elem_ptr;
 	// List already initialized.
 	if(list_ptr != NULL)
 	{		
 		// Already contains element.	
-		if(element_list_contains_name(*list_ptr, value.name, NULL) != -1)
+		if(element_list_contains_name(*list_ptr, value.name, &elem_ptr) != -1)
 		{
-			fprintf(stderr, "Element %s already exists.\n", value.name);
-			exit(1);
-			return 1;
+			if(elem_ptr->is_set)
+			{
+				fprintf(stderr, "Element %s already exists.\n", value.name);
+				exit(1);
+				return 1;
+			}
+
+			is_existing_element = 1;
 		}
 
 		element_count = generic_list_count(*list_ptr);
 	}
-	element* alloc_value = (element*) malloc(sizeof(element));
-	// Alloc error.
-	if(alloc_value == NULL)
-	{
-		fprintf(stderr, "Insufficent memory.\n");
-		exit(1);
-		return 1;
-	}
-	
-	alloc_value->id = element_count;
-	alloc_value->type = value.type;
-	strcpy(alloc_value->name, value.name);
-	alloc_value->nodes = value.nodes;
-	alloc_value->ref_elements = value.ref_elements;
-	alloc_value->value = value.value;
-	
-	int result = generic_list_insert(list_ptr, (void*) alloc_value);
-	// Insert error.
-	if(result != 0)
-	{
-		free(alloc_value);
 
-		fprintf(stderr, "Element insertion failed.\n");
-		exit(1);
-		return 1;
+	if(!is_existing_element)
+	{
+		element* alloc_value = (element*) malloc(sizeof(element));
+		// Alloc error.
+		if(alloc_value == NULL)
+		{
+			fprintf(stderr, "Insufficent memory.\n");
+			exit(1);
+			return 1;
+		}
+		
+		alloc_value->id = element_count;
+		alloc_value->type = value.type;
+		strcpy(alloc_value->name, value.name);
+		alloc_value->nodes = value.nodes;
+		alloc_value->ref_elements = value.ref_elements;
+		alloc_value->value = value.value;
+		
+		int result = generic_list_insert(list_ptr, (void*) alloc_value);
+		// Insert error.
+		if(result != 0)
+		{
+			free(alloc_value);
+	
+			fprintf(stderr, "Element insertion failed.\n");
+			exit(1);
+			return 1;
+		}
+	}
+
+	else
+	{
+		elem_ptr->id = element_count;
+		elem_ptr->type = value.type;
+		elem_ptr->nodes = value.nodes;
+		elem_ptr->ref_elements = value.ref_elements;
+		elem_ptr->value = value.value;
+
 	}
 
 	return 0;
@@ -65,6 +87,10 @@ int element_list_count(element_list* list)
 int element_list_contains_name(element_list* list, const char* element_name, element** ret_element)
 {
 	int found_index = -1;
+	if(ret_element != NULL)
+	{
+		*ret_element = NULL;
+	}
 
 	char lowercase_name[512];
 	strcpy(lowercase_name, element_name);

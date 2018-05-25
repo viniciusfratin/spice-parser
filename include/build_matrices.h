@@ -3,6 +3,7 @@
 
 #include "spice_format.h"
 
+void set_nodes(int position, label* node, void* additional_data);
 void classify_element_groups(int position, element* element_ptr, void* additional_data);
 void generate_element_stamps(int position, element* element_ptr, void* additional_data);
 void generate_resistor_stamp(element* resistor);

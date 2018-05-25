@@ -177,7 +177,11 @@ double get_multiplier_value(const char* multiplier_str)
 
 int get_command_type(const char* command_name)
 {
-	if(!strcmp(command_name, ".OP"))
+	char lowercase_command[16];
+	strcpy(lowercase_command, command_name);
+	convert_to_lowercase(lowercase_command);
+
+	if(!strcmp(lowercase_command, ".op"))
 	{
 		return COMMAND_OP;
 	}

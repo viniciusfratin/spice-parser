@@ -71,10 +71,6 @@ int main(int argc, char* argv[])
 	return result;
 }
 
-void print_label(int label_index, label l, void* additional_data)
-{
-	printf("Label: %d\n", l.id);
-}
 
 void print_element(int element_index, element* element_ptr, void* additional_data)
 {

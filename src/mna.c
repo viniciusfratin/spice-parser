@@ -18,15 +18,24 @@ void start_mna(mna_data data)
 		fprintf(stderr, "Alloc error.\n");
 		exit(1);
 	}
-
+	
 	number_of_nodes = label_list_count(data.nodes);
+
+	matrix_pointers = (void*) malloc((number_of_nodes + number_of_elements) * sizeof(void*));
+	if(matrix_pointers == NULL)
+	{
+		fprintf(stderr, "Alloc error.\n");
+		exit(1);
+	}
+
+	label_list_enumerate(data.nodes, &set_nodes, NULL);	
+
 	number_of_extra_currents = 0;
 	printf("\nClassifying elements into groups...\n");
 	element_list_enumerate(data.elements, &classify_element_groups, (void*)&data.elements);
 
 	printf("\nClassification result:\n");
 	element_list_enumerate(data.elements, &list_element_groups, NULL);
-
 	
 	printf("\nAllocating matrices...\n");
 	matrix_dim = number_of_nodes + number_of_extra_currents - 1; // Ground doesn't enter the equations.
@@ -55,10 +64,10 @@ void start_mna(mna_data data)
 	printf("\nLU Decomposition successfull.\n");
 	
 	printf("\nSolving system of equations...\n");
-	refine(h_matrix, lower_matrix, upper_matrix, permutation_matrix, b_vector, x_vector, 0.01, 0.1, matrix_dim);	
+	refine(h_matrix, lower_matrix, upper_matrix, permutation_matrix, b_vector, x_vector, 0.01, 1e-6, matrix_dim);	
 	
 	printf("\nEquation solving successfull.\n");
-	print_solution();
+	print_solution(data);
 
 	free_matrices();
 }
@@ -69,9 +78,19 @@ void print_matrices()
 	print_vector(b_vector, matrix_dim, "B");
 }
 
-void print_solution()
+void print_solution(mna_data data)
 {
-	print_vector(x_vector, matrix_dim, "x");
+	int i;
+	for(i = 0; i < number_of_nodes - 1; i++)
+	{
+		printf("V(%s) = %le\n", ((label*)matrix_pointers[i])->name, x_vector[i]);
+	}
+
+	printf("\n");
+	for(i = number_of_nodes - 1; i < matrix_dim; i++)
+	{
+		printf("I(%s) = %le\n", ((element*)matrix_pointers[i])->name, x_vector[i]);
+	}
 }
 
 void free_matrices()
@@ -84,5 +103,6 @@ void free_matrices()
 	free_vector(b_vector);
 	free_vector(x_vector);
 
+	free(matrix_pointers);
 	free(extra_currents_positions);
 }

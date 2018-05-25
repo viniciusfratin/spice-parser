@@ -118,13 +118,13 @@ int label_list_clear(label_list** list_ptr)
 	return clear_result;
 }
 
-void label_list_enumerate(label_list* list, void (*callback)(int, label, void*), void* additional_data)
+void label_list_enumerate(label_list* list, void (*callback)(int, label*, void*), void* additional_data)
 {
 	int i;
 	label_list* current_element = list;
 	for(i = 0; current_element != NULL; current_element = current_element->next, i++)
 	{
 		label* l = (label*) current_element->value;
-		(*callback)(i, *l, additional_data);
+		(*callback)(i, l, additional_data);
 	}
 }
