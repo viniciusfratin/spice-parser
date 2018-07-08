@@ -11,6 +11,12 @@ void start_mna(mna_data data)
 {
 	printf("\nStarting Modified Nodal Analysis...\n");
 
+	printf("\nVerifying non-linear element models...\n");
+	element_list_enumerate(data.elements, &check_non_linear_models, NULL);
+
+	printf("\nGenerating non-linear elements companions...\n");
+	element_list_enumerate(data.elements, &generate_non_linear_companions, (void*)&data.elements);
+
 	int number_of_elements = element_list_count(data.elements);
 	extra_currents_positions = (int*) malloc(number_of_elements * sizeof(int));
 	if(extra_currents_positions == NULL)
@@ -50,25 +56,40 @@ void start_mna(mna_data data)
 	
 	printf("\nAllocation successfull.\n");	
 
-	set_identity_matrix(permutation_matrix, matrix_dim);
-
-	printf("\nGenerating element stamps...\n");
-	element_list_enumerate(data.elements, &generate_element_stamps, NULL);
-
-	printf("\nLinear system Hx = B creation successfull.\n");
-	print_matrices();
-
-	printf("\nStarting LU Decomposition...\n");
-	decompose(h_matrix, b_vector, permutation_matrix, lower_matrix, upper_matrix, matrix_dim);
-
-	printf("\nLU Decomposition successfull.\n");
+	// Solving begin.
+	int i;
+	for(i = 0; i < 1; i++)
+	{
+		set_identity_matrix(permutation_matrix, matrix_dim);
+		set_null_matrix(h_matrix, matrix_dim);
+		set_null_matrix(lower_matrix, matrix_dim);
+		set_null_matrix(upper_matrix, matrix_dim);
+		set_null_vector(b_vector, matrix_dim);
 	
-	printf("\nSolving system of equations...\n");
-	refine(h_matrix, lower_matrix, upper_matrix, permutation_matrix, b_vector, x_vector, 0.01, 1e-6, matrix_dim);	
+		printf("\nGenerating non-linear initial stamps...");	
+		element_list_enumerate(data.elements, &set_companion_values, (void*)x_vector);
+		
+		printf("\nGenerating linear element stamps...\n");
+		element_list_enumerate(data.elements, &generate_element_stamps, NULL);
 	
-	printf("\nEquation solving successfull.\n");
-	print_solution(data);
+		printf("\nLinear system Hx = B creation successfull.\n");
+		print_matrices();
+	
+		printf("\nStarting LU Decomposition...\n");
+		decompose(h_matrix, b_vector, permutation_matrix, lower_matrix, upper_matrix, matrix_dim);
+	
+		printf("\nLU Decomposition successfull.\n");
+		
+		printf("\nSolving system of equations...\n");
+		refine(h_matrix, lower_matrix, upper_matrix, permutation_matrix, b_vector, x_vector, 0.01, 1e-6, matrix_dim);	
+		
+		printf("\nEquation solving successfull.\n");
+		print_solution(data);
 
+	}
+
+
+	
 	free_matrices();
 }
 

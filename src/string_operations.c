@@ -1,4 +1,5 @@
 #include <ctype.h>
+#include <string.h>
 #include "string_operations.h"
 
 char* convert_to_lowercase(char* str)
@@ -29,4 +30,16 @@ char* remove_spaces(char* source)
 	*i = 0;
 	
 	return source;
+}
+
+int lowercase_compare(const char* str1, const char* str2)
+{
+	char s1[512], s2[512];
+	strcpy(s1, str1);
+	strcpy(s2, str2);
+
+	convert_to_lowercase(s1);
+	convert_to_lowercase(s2);
+
+	return strcmp(s1, s2);
 }

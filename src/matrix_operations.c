@@ -56,10 +56,21 @@ double vector_norm(double* vector, int vector_dim)
 
 void set_identity_matrix(double** matrix, int matrix_dim)
 {
-	int i;
-	for(int i = 0; i < matrix_dim; i++)
+	int i, j;
+	for(i = 0; i < matrix_dim; i++)
 	{
-		matrix[i][i] = 1;
+		for(j = 0; j < matrix_dim; j++)
+		{
+			if(i == j)
+			{
+				matrix[i][j] = 1;
+			}
+
+			else
+			{
+				matrix[i][j] = 0;
+			}
+		}
 	}
 }
 

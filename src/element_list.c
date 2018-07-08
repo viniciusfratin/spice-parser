@@ -53,6 +53,9 @@ int element_list_insert(element_list** list_ptr, element value)
 		alloc_value->nodes = value.nodes;
 		alloc_value->ref_elements = value.ref_elements;
 		alloc_value->value = value.value;
+		alloc_value->model = value.model;
+		alloc_value->param_list = value.param_list;
+		alloc_value->companion_elements = value.companion_elements;
 		
 		int result = generic_list_insert(list_ptr, (void*) alloc_value);
 		// Insert error.
@@ -73,7 +76,9 @@ int element_list_insert(element_list** list_ptr, element value)
 		elem_ptr->nodes = value.nodes;
 		elem_ptr->ref_elements = value.ref_elements;
 		elem_ptr->value = value.value;
-
+		elem_ptr->model = value.model;
+		elem_ptr->param_list = value.param_list;
+		elem_ptr->companion_elements = value.companion_elements;
 	}
 
 	return 0;

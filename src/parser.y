@@ -14,6 +14,7 @@
 #include "main.h"
 #include "label_list.h"
 #include "spice_format.h"
+#include "parameter_list.h"
 #include "parser.h"
 #include "lexer.h"
 
@@ -24,14 +25,18 @@ int yyerror(YYLTYPE *locp, yyscan_t scanner, struct parser_data *p_data, const c
 
 %union {
 	char string[512];
+	double number;
 	element_value value;
+	number_desc val_type;
 	special_cc cc;
+	parameter param;
+	parameter_list* param_list;
 }
 
 %token TK_NEW_LINE
 %token <string> TK_COMMAND
 %token <string> TK_LABEL
-%token <value> TK_VALUE
+%token <val_type> TK_NUMBER
 %token <string> TK_RESISTOR
 %token <string> TK_CAPACITOR
 %token <string> TK_INDUCTOR
@@ -49,6 +54,12 @@ int yyerror(YYLTYPE *locp, yyscan_t scanner, struct parser_data *p_data, const c
 %type <string> two_node_element
 %type <cc> three_node_element
 %type <string> four_node_element
+
+%type <string> node;
+%type <value> value
+
+%type <param_list> param_list
+%type <param> param
 
 %%
 
@@ -87,10 +98,10 @@ command_identifier:
 command_parameters:
 		%empty
 		| TK_LABEL command_parameters
-		| TK_VALUE command_parameters
+		| TK_NUMBER command_parameters
 		
 element: 
-		two_node_element TK_LABEL TK_LABEL TK_VALUE
+		two_node_element node node value param_list
 			{
 				label_list_insert(p_data->label_list, $2);
 				label_list_insert(p_data->label_list, $3);
@@ -108,10 +119,12 @@ element:
 				generic_list_insert(&elem.nodes, (void*)l1);
 				generic_list_insert(&elem.nodes, (void*)l2);
 				elem.value = $4;
+				elem.param_list = $5;
+				elem.companion_elements = NULL;
 
 				element_list_insert(p_data->element_list, elem);
 			}
-		| three_node_element TK_LABEL TK_LABEL TK_LABEL TK_VALUE
+		| three_node_element node node node value param_list
 			{
 				special_cc c = $1;
 
@@ -171,11 +184,13 @@ element:
 				}
 
 				elem.value = $5;
+				elem.param_list = $6;
+				elem.companion_elements = NULL;
 
 				element_list_insert(p_data->element_list, elem);
 
 			}
-		| four_node_element TK_LABEL TK_LABEL TK_LABEL TK_LABEL TK_VALUE
+		| four_node_element node node node node value param_list
 			{
 				label_list_insert(p_data->label_list, $2);
 				label_list_insert(p_data->label_list, $3);
@@ -199,6 +214,8 @@ element:
 				generic_list_insert(&elem.nodes, (void*)l3);
 				generic_list_insert(&elem.nodes, (void*)l4);
 				elem.value = $6;
+				elem.param_list = $7;
+				elem.companion_elements = NULL;
 
 				element_list_insert(p_data->element_list, elem);
 			}
@@ -250,7 +267,62 @@ three_node_element:
 four_node_element:
 		TK_VCV_SOURCE	{ strcpy($$, $1); }
 		| TK_VCC_SOURCE { strcpy($$, $1); }
-		
+	
+node:
+		TK_LABEL
+			{
+				strcpy($$, $1);
+			}
+
+		| TK_NUMBER
+			{
+				strcpy($$, $1.string);
+			}
+
+value:
+		TK_LABEL
+			{
+				element_value value;
+				value.is_numeric = 0;
+				strcpy(value.value.string_value, $1);
+				
+				$$ = value;
+			}
+
+		| TK_NUMBER
+			{
+				element_value value;
+				value.is_numeric = 1;
+				value.value.numeric_value = $1.number;
+
+				$$ = value;
+			}
+
+	
+param_list:
+		%empty
+			{
+				$$ = NULL;
+			}
+
+		| param_list param
+			{
+				parameter_list* param_list = $1;
+				parameter_list_insert(&param_list, $2);
+
+				$$ = param_list;
+			}
+
+param:
+		TK_LABEL '=' TK_NUMBER
+			{
+				parameter param;
+				strcpy(param.name, $1);
+				param.value = $3.number;
+
+				$$ = param;
+			}
+
 %%
 
 int yyerror(YYLTYPE *locp, yyscan_t scanner, struct parser_data *p_data, const char *msg) 

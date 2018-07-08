@@ -14,6 +14,7 @@
 #include <ctype.h>
 #include "main.h"
 #include "spice_format.h"
+#include "parameter_list.h"
 #include "parser.h"
 #include "label_list.h"
 #include "string_operations.h"
@@ -21,24 +22,25 @@
 int get_element_token_type(const char* element_name);
 double get_multiplier_value(const char* multiplier_str);
 
+
 %}
 
-misc_symbol ,|;|:|\(|\)|\[|\]|\{|\}|\+|-|\*|\/|<|>|=|!|&|\$|%|#|\^ 
+misc_symbol ,|;|:|\(|\)|\[|\]|\{|\}|\+|-|\*|\/|<|>|!|&|\$|%|#|\^ 
 common_text ({misc_symbol}|[a-zA-Z0-9_])+
 whitespace [ \t]+
 new_line "\n"
 multiplier "f"|"p"|"n"|"u"|"m"|"k"|"meg"|"g"|"t"
-whole_number (-)?([0-9])+{whitespace}*
+whole_number (-)?([0-9])+
 simple_number {whole_number}|({whole_number}"."{whole_number})
 sci_number {simple_number}"E"{simple_number}
 mult_number {simple_number}{multiplier}
-simple_number_value {simple_number}$
-sci_number_value {sci_number}$
-mult_number_value {mult_number}$
+simple_number_value {simple_number}
+sci_number_value {sci_number}
+mult_number_value {mult_number}
 comment "*"(.*)
-identifier ^(.{common_text})({whitespace})*
-label {common_text}{whitespace}
-text_value {common_text}$
+identifier ^(.{common_text})
+label {common_text}
+equal_sign =
 
 %%
 
@@ -48,6 +50,11 @@ text_value {common_text}$
 
 {comment}	{ }
 
+{whitespace}	{ }
+
+{equal_sign}	{
+			return *yytext;
+		}
 
 {identifier}	{
 			if(yylineno > 1)
@@ -72,12 +79,12 @@ text_value {common_text}$
 				double value;
 				sscanf(yytext, "%lf", &value);
 				
-				element_value elem_val;
-				elem_val.value.numeric_value = value;
-				elem_val.is_numeric = 1;
+				number_desc val_type;
+				val_type.number = value;
+				strcpy(val_type.string, remove_spaces(yytext));
+				yylval->val_type = val_type;
 
-				yylval->value = elem_val;
-				return TK_VALUE;
+				return TK_NUMBER;
 			}
 		}
 
@@ -86,13 +93,13 @@ text_value {common_text}$
 			{
 				double value;
 				sscanf(yytext, "%le", &value);
-	
-				element_value elem_val;
-				elem_val.value.numeric_value = value;
-				elem_val.is_numeric = 1;
 
-				yylval->value = elem_val;
-				return TK_VALUE;
+				number_desc val_type;
+				val_type.number = value;
+				strcpy(val_type.string, remove_spaces(yytext));	
+				yylval->val_type = val_type;
+
+				return TK_NUMBER;
 			}
 		}
 
@@ -107,13 +114,13 @@ text_value {common_text}$
 				
 				value = value * multiplier_value;
 
-				element_value elem_val;
-				elem_val.value.numeric_value = value;
-				elem_val.is_numeric = 1;
+				number_desc val_type;
+				val_type.number = value;
+				strcpy(val_type.string, remove_spaces(yytext));
 
-				yylval->value = elem_val;
+				yylval->val_type = val_type;
 
-				return TK_VALUE;
+				return TK_NUMBER;
 			}
 		}
 
@@ -125,20 +132,6 @@ text_value {common_text}$
 				return TK_LABEL;
 			}	
 		}			
-
-
-{text_value}	{
-			if(yylineno > 1)
-			{
-				element_value elem_val;
-				strcpy(elem_val.value.string_value, yytext);
-				elem_val.is_numeric = 0;
-
-				yylval->value = elem_val;
-				
-				return TK_VALUE;
-			}
-		}
 
 .	{
 		if(yylineno > 1)

@@ -2,6 +2,7 @@
 #define SPICE_FORMAT_H_
 
 #include "label_list.h"
+#include "parameter_list.h"
 
 #define TYPE_RESISTOR 1
 #define TYPE_CAPACITOR 2
@@ -19,6 +20,11 @@
 
 #define COMMAND_OP 1
 #define COMMAND_INVALID -1
+
+#define MODEL_DIODEM1 1
+#define MODEL_NMOS 2
+#define MODEL_PMOS 3
+#define MODEL_INVALID -1
 
 int get_element_type(const char* element_name);
 void get_element_type_name(char* ret_str, int type);
@@ -41,6 +47,14 @@ struct element_value_struct
 
 typedef struct element_value_struct element_value;
 
+struct number_desc_struct
+{
+	char string[256];
+	double number;
+};
+
+typedef struct number_desc_struct number_desc;
+
 struct element_struct
 {
 	int id;
@@ -51,6 +65,9 @@ struct element_struct
 	generic_list* nodes; // generic_list of label*
 	generic_list* ref_elements; // generic_list of element*
 	element_value value;
+	int model;
+	parameter_list* param_list;
+	generic_list* companion_elements;
 };
 
 typedef struct element_struct element;
@@ -70,5 +87,6 @@ struct special_cc_struct
 };
 
 typedef struct special_cc_struct special_cc;
+
 
 #endif
