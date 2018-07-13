@@ -49,9 +49,11 @@ void check_non_linear_models(int position, element* element_ptr, void* additiona
 					parameter_list_insert(&element_ptr->param_list, N_param);
 				}
 
+#ifdef VERBOSE
 				printf("Element: %s\n", element_ptr->name);
 				printf("-> Using model: %s\n", element_ptr->value.value.string_value);
 				parameter_list_enumerate(element_ptr->param_list, &list_element_params, NULL);
+#endif
 			}
 
 			else
@@ -282,10 +284,12 @@ void generate_diode_companions(int position, element* element_ptr, void* additio
 			generic_list_insert(&element_ptr->companion_elements, (void*)c_element);
 			generic_list_insert(&element_ptr->companion_elements, (void*)r_element);
 	
+#ifdef VERBOSE
 			printf("-> Element: %s\n", element_ptr->name);
 			printf("---> Generated element: %s\n", c_source_name);
 			printf("---> Generated element: %s\n", resistance_name);
-			
+#endif	
+		
 			break;
 		
 		default:
@@ -299,6 +303,7 @@ void generate_mosfet_companions(int position, element* element_ptr, void* additi
 	switch(element_ptr->model)
 	{
 		case MODEL_NMOS:
+		case MODEL_PMOS:
 			;
 			element_list* elements = *((element_list**)additional_data);
 
@@ -306,7 +311,6 @@ void generate_mosfet_companions(int position, element* element_ptr, void* additi
 			label* node_d = (label*)element_ptr->nodes->value;
 			label* node_g = (label*)element_ptr->nodes->next->value;
 			label* node_s = (label*)element_ptr->nodes->next->next->value;
-
 
 			element mosfet_c_source;
 					
@@ -385,11 +389,13 @@ void generate_mosfet_companions(int position, element* element_ptr, void* additi
 			generic_list_insert(&element_ptr->companion_elements, (void*)r_element);
 			generic_list_insert(&element_ptr->companion_elements, (void*)vccs_element);
 	
+#ifdef VERBOSE
 			printf("-> Element: %s\n", element_ptr->name);
 			printf("---> Generated element: %s\n", c_source_name);
 			printf("---> Generated element: %s\n", resistance_name);
 			printf("---> Generated element: %s\n", vccs_name);
-			
+#endif	
+		
 			break;
 		
 		default:
@@ -444,7 +450,10 @@ void set_diode_companion_values(element* diode, double* x_vector)
 	
 	c_source->value.value.numeric_value = i_eq;
 	resistance->value.value.numeric_value = r_eq;
+
+#ifdef VERBOSE
 	printf("\n-> %s: %s = %le; %s = %le\n", diode->name, "r_eq", r_eq, "i_eq", i_eq);
+#endif
 }
 
 void set_mosfet_companion_values(element* mosfet, double* x_vector)
@@ -501,17 +510,67 @@ void set_mosfet_companion_values(element* mosfet, double* x_vector)
 	double LAMBDA = LAMBDA_param->value;
 	double W = W_param->value;
 	double L = L_param->value;
-	
+	double beta = Kp * W / L;	
+
 	double v_ds = v_d - v_s;
 	double v_gs = v_g - v_s;
 
-	//double g_eq = (IS / (N * VT)) * exp(vd / (N * VT));
-	//double r_eq = 1/g_eq;
-	//double i_eq = IS * (exp(vd / (N * VT)) - 1) - vd * g_eq;
+	double G_ds, g_m, i_d;
+	int is_cut_off, is_linear, is_saturation;
 	
-	//c_source->value.value.numeric_value = i_eq;
-	//resistance->value.value.numeric_value = r_eq;
-	//printf("\n-> %s: %s = %le; %s = %le\n", mosfet->name, "r_eq", r_eq, "i_eq", i_eq);
+	switch(mosfet->model)
+	{
+		case MODEL_NMOS:
+			is_cut_off = (v_gs <= VTH);
+			is_linear = (v_ds >= 0 && v_gs - VTH >= v_ds);
+			is_saturation = (v_gs - VTH >= 0 && v_gs - VTH <= v_ds);
+			
+			break;
+
+		case MODEL_PMOS:
+			is_cut_off = (v_gs >= VTH);
+			is_linear = (v_ds <= 0 && v_gs - VTH <= v_ds);
+			is_saturation = (v_gs - VTH <= 0 && v_gs - VTH >= v_ds);
+		
+			LAMBDA = -LAMBDA;
+			beta = -beta;
+			
+			break;
+	}
+
+	// Cut-off.
+	if(is_cut_off)
+	{
+		G_ds = 0;
+		g_m = 0;
+		i_d = 0;
+	}
+	// Linear.
+	else if(is_linear)
+	{
+		G_ds = beta * (v_gs - VTH - v_ds);
+		g_m = beta * v_ds;
+		i_d = beta * ((v_gs - VTH) * v_ds - 0.5 * pow(v_ds, 2));
+	}
+
+	// Saturation.
+	else if(is_saturation)
+	{
+		G_ds = 0.5 * beta * LAMBDA * pow(v_gs - VTH, 2);
+		g_m = beta * (v_gs - VTH) * (1 + LAMBDA * v_ds);
+		i_d = 0.5 * beta * pow(v_gs - VTH, 2) * (1 + LAMBDA * v_ds);
+	}	
+
+	double r_ds = 1 / G_ds;
+	double i_eq = i_d - G_ds * v_ds - g_m * v_gs;
+
+	c_source->value.value.numeric_value = i_eq;
+	resistance->value.value.numeric_value = r_ds;
+	vccs->value.value.numeric_value = g_m;
+
+#ifdef VERBOSE
+	printf("\n-> %s: %s = %le; %s = %le; %s = %le\n", mosfet->name, "r_ds", r_ds, "i_eq", i_eq, "g_m", g_m);
+#endif
 }
 
 
@@ -559,7 +618,10 @@ void classify_element_groups(int position, element* element_ptr, void* additiona
 
 void generate_element_stamps(int position, element* element_ptr, void* additional_data)
 {
+#ifdef VERBOSE
 	printf("Generating stamps for element: %s\n", element_ptr->name);
+#endif
+
 	switch(element_ptr->type)
 	{
 		case TYPE_RESISTOR:

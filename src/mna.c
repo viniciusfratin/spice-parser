@@ -7,6 +7,11 @@
 #include "lu_decomposition.h"
 #include "iterative_refinement.h"
 
+#define ABSTOL 1e-6
+#define RELTOL 1e-3
+
+//#define VERBOSE
+
 void start_mna(mna_data data)
 {
 	printf("\nStarting Modified Nodal Analysis...\n");
@@ -53,43 +58,75 @@ void start_mna(mna_data data)
 
 	b_vector = alloc_vector(matrix_dim);	
 	x_vector = alloc_vector(matrix_dim);
-	
+	double* previous_x_vector = alloc_vector(matrix_dim);
+	double* correction_vector = alloc_vector(matrix_dim);	
+	double tolerance = 0;
+	double correction = 1;
+
 	printf("\nAllocation successfull.\n");	
 
+	printf("\nBegin solving...");
+
 	// Solving begin.
-	int i;
-	for(i = 0; i < 1; i++)
+	int i = 0;
+	while(correction > tolerance) 
 	{
+		printf("\nMain iteration %d...\n", i + 1);
+
 		set_identity_matrix(permutation_matrix, matrix_dim);
 		set_null_matrix(h_matrix, matrix_dim);
 		set_null_matrix(lower_matrix, matrix_dim);
 		set_null_matrix(upper_matrix, matrix_dim);
 		set_null_vector(b_vector, matrix_dim);
 	
-		printf("\nGenerating non-linear initial stamps...");	
-		element_list_enumerate(data.elements, &set_companion_values, (void*)x_vector);
-		
+#ifdef VERBOSE
+		printf("\nGenerating non-linear initial stamps...");
+#endif
+		element_list_enumerate(data.elements, &set_companion_values, (void*)previous_x_vector);
+
+#ifdef VERBOSE
 		printf("\nGenerating linear element stamps...\n");
+#endif
 		element_list_enumerate(data.elements, &generate_element_stamps, NULL);
 	
+#ifdef VERBOSE
 		printf("\nLinear system Hx = B creation successfull.\n");
 		print_matrices();
 	
 		printf("\nStarting LU Decomposition...\n");
+#endif
 		decompose(h_matrix, b_vector, permutation_matrix, lower_matrix, upper_matrix, matrix_dim);
 	
+#ifdef VERBOSE
 		printf("\nLU Decomposition successfull.\n");
 		
 		printf("\nSolving system of equations...\n");
-		refine(h_matrix, lower_matrix, upper_matrix, permutation_matrix, b_vector, x_vector, 0.01, 1e-6, matrix_dim);	
-		
-		printf("\nEquation solving successfull.\n");
-		print_solution(data);
+#endif
+		if(i == 0)
+		{
+			refine(h_matrix, lower_matrix, upper_matrix, permutation_matrix, b_vector, previous_x_vector, RELTOL, ABSTOL, matrix_dim);
+			tolerance = RELTOL * vector_norm(previous_x_vector, matrix_dim);
+			correction = tolerance + 1;
+		}
+	
+		else
+		{
+			refine(h_matrix, lower_matrix, upper_matrix, permutation_matrix, b_vector, x_vector, RELTOL, ABSTOL, matrix_dim);
+			subtract_vectors(x_vector, previous_x_vector, correction_vector, matrix_dim);
+			correction = vector_norm(correction_vector, matrix_dim);
+	
+			copy_vector(previous_x_vector, x_vector, matrix_dim);
+		}
 
+		i++;
 	}
 
+	printf("\nEquation solving successfull.\n");
+	print_solution(data);
 
-	
+
+	free(previous_x_vector);
+	free(correction_vector);
 	free_matrices();
 }
 
@@ -101,6 +138,8 @@ void print_matrices()
 
 void print_solution(mna_data data)
 {
+	printf("\nSolution:\n");
+
 	int i;
 	for(i = 0; i < number_of_nodes - 1; i++)
 	{

@@ -16,7 +16,7 @@ void refine(double** coefficient_matrix, double** lower_matrix, double** upper_m
 	double x_norm;
 	int iteration_counter = 1;
 	do {
-		printf("Iteration 1...\n");
+		printf("-> Refinement iteration 1...\n");
 		iterate(coefficient_matrix, lower_matrix, upper_matrix, permutation_matrix, independent_vector, solution_vector, z_vector, temp_vector, residue, matrix_dim);
 
 		z_norm = vector_norm(z_vector, matrix_dim);
